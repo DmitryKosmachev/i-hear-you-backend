@@ -4,7 +4,7 @@ from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
-from content.models import Category, Theme, ContentFile
+from content.models import Category, Theme, ContentFile, Type
 
 
 User = get_user_model()
@@ -63,4 +63,11 @@ class ContentFileSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ContentFile
+        fields = '__all__'
+
+
+class TypeSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Type
         fields = '__all__'
