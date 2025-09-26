@@ -52,6 +52,12 @@ DJOSER = {
         'user': 'api.serializers.UserListSerializer',
         'current_user': 'api.serializers.UserListSerializer',
     },
+    'PERMISSIONS': {
+        'user_create': ['rest_framework.permissions.AllowAny'],
+        'user_list': ['rest_framework.permissions.AllowAny'],
+        'user': ['rest_framework.permissions.AllowAny'],
+        'user_delete': ['rest_framework.permissions.AllowAny'],
+    },
 }
 
 MIDDLEWARE = [
