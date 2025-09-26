@@ -1,0 +1,50 @@
+name: Deploy to Test
+
+on:
+  push:
+    branches:
+      - main
+
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build & push backend image
+        uses: docker/build-push-action@v4
+        with:
+          context: ./backend/
+          push: true
+          tags: dmitrykosmachev/i_hear_you_backend:latest
+
+      - name: Build & push gateway image
+        uses: docker/build-push-action@v4
+        with:
+          context: ./gateway/
+          push: true
+          tags: dmitrykosmachev/i_hear_you_nginx:latest
+
+      - name: Deploy to test server via SSH
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          script: |
+            cd /home/test_pan_auto
+            git pull origin develop
+            docker compose -f docker-compose.test.yml pull
+            docker compose -f docker-compose.test.yml up -d --build
