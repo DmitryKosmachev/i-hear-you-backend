@@ -9,6 +9,7 @@ from .serializers import CategorySerializer, ThemeSerializer, ContentFileSeriali
 class CustomTokenObtainPairView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
 
+
 class CategoryViewSet(viewsets.ModelViewSet):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
