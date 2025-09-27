@@ -1,6 +1,6 @@
 services:
   db:
-    image: postgres:15-alpine
+    image: postgres:18
     container_name: ihear-postgres
     env_file: .env
     ports:
