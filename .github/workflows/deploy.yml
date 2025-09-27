@@ -46,4 +46,5 @@ jobs:
           script: |
             cd /home/user10/dev
             docker compose -f docker-compose.production.yml pull
-            docker compose -f docker-compose.production.yml up -d --build
+            docker compose -f docker-compose.production.yml up -d
+            docker image prune -f
