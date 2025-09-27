@@ -1,0 +1,5 @@
+MIN_RATING_INT = 1
+MAX_RATING_INT = 5
+RATING_VALIDATION_ERROR = (
+    f'Allowed rating: from {MIN_RATING_INT} to {MAX_RATING_INT}.'
+)

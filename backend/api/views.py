@@ -1,9 +1,16 @@
 from django.db.migrations.serializer import TypeSerializer
+from django.db.models import Avg
 from rest_framework import viewsets
 from rest_framework_simplejwt.views import TokenObtainPairView
-from content.models import Category, Theme, ContentFile, Type
-from .serializers import CategorySerializer, ThemeSerializer, ContentFileSerializer, CustomTokenObtainPairSerializer, TypeSerializer
 
+from api.serializers import (
+    CategorySerializer,
+    ContentFileSerializer,
+    CustomTokenObtainPairSerializer,
+    ThemeSerializer,
+    TypeSerializer
+)
+from content.models import Category, ContentFile, Theme, Type
 
 
 class CustomTokenObtainPairView(TokenObtainPairView):
@@ -21,11 +28,10 @@ class ThemeViewSet(viewsets.ModelViewSet):
 
 
 class ContentFileViewSet(viewsets.ModelViewSet):
-    queryset = ContentFile.objects.all()
+    queryset = ContentFile.objects.annotate_rating()
     serializer_class = ContentFileSerializer
 
 
 class TypeViewSet(viewsets.ModelViewSet):
     queryset = Type.objects.all()
     serializer_class = TypeSerializer
-

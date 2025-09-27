@@ -1,6 +1,13 @@
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.utils.text import slugify
-import os
+
+from content.constants import (
+    MAX_RATING_INT,
+    MIN_RATING_INT,
+    RATING_VALIDATION_ERROR
+)
+from users.models import BotUser
 
 
 class Type(models.Model):
@@ -57,6 +64,7 @@ class Category(models.Model):
             self.slug = slugify(self.name)
         super().save(*args, **kwargs)
 
+
 class Theme(models.Model):
     """Модель темы внутри категории."""
     category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='themes', verbose_name="Категория")
@@ -85,6 +93,10 @@ class Theme(models.Model):
             self.slug = slugify(self.name)
         super().save(*args, **kwargs)
 
+
+class ContentFileQuerySet(models.query.QuerySet):
+    def annotate_rating(self):
+        return self.annotate(rating=models.Avg('ratings__rating'))
 
 
 class ContentFile(models.Model):
@@ -115,6 +127,7 @@ class ContentFile(models.Model):
     )
     is_active = models.BooleanField(default=True, verbose_name="Активен")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата создания")
+    objects = ContentFileQuerySet.as_manager()
 
     class Meta:
         verbose_name = "Файл"
@@ -123,3 +136,27 @@ class ContentFile(models.Model):
 
     def __str__(self):
         return f"{self.name}"
+
+
+class ContentRating(models.Model):
+    """User rating for content."""
+
+    content = models.ForeignKey(ContentFile, models.CASCADE)
+    user = models.ForeignKey(BotUser, models.SET_NULL, null=True)
+    rating = models.PositiveSmallIntegerField(
+        validators=[
+            MinValueValidator(MIN_RATING_INT, RATING_VALIDATION_ERROR),
+            MaxValueValidator(MAX_RATING_INT, RATING_VALIDATION_ERROR)
+        ]
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        default_related_name = 'ratings'
+        ordering = ['created_at', 'content', 'rating', 'user']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['content', 'user'],
+                name='unique_user_rating'
+            )
+        ]
