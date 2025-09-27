@@ -5,6 +5,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.getenv('SECRET_KEY', 'default_key')
 
+TELEGRAM_BOT_TOKEN = os.getenv('TG_TOKEN')
+
 DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
 ALLOWED_HOSTS = ['*']
@@ -24,6 +26,7 @@ INSTALLED_APPS = [
     'api.apps.ApiConfig',
     'content.apps.ContentConfig',
     'users.apps.UsersConfig',
+    'tg_bot.apps.BotConfig',
 ]
 
 REST_FRAMEWORK = {

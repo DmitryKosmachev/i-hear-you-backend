@@ -86,7 +86,6 @@ class Theme(models.Model):
         super().save(*args, **kwargs)
 
 
-
 class ContentFile(models.Model):
     """Модель файла для темы."""
 
