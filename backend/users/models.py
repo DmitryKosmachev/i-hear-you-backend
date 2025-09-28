@@ -13,6 +13,7 @@ class StaffUserManager(BaseUserManager):
         user = self.model(email=email, **extra_fields)
         user.set_password(password)
         user.is_staff = True
+        user.is_superuser = True
         user.save(using=self._db)
         return user
 
@@ -24,8 +25,9 @@ class StaffUserManager(BaseUserManager):
 
 class StaffUser(AbstractUser):
     USERNAME_FIELD = "email"
-    REQUIRED_FIELDS = ["first_name", "last_name"]
+    REQUIRED_FIELDS = ["username", "first_name", "last_name"]
 
+    username = models.CharField()
     email = models.EmailField(unique=True)
     first_name = models.CharField(max_length=150)
     last_name = models.CharField(max_length=150)
