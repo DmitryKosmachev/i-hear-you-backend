@@ -20,11 +20,11 @@ class CategoryAdmin(admin.ModelAdmin):
 
 @admin.register(Topic)
 class TopicAdmin(admin.ModelAdmin):
-    list_display = ("name", "category", "slug", "is_active", "created_at")
-    list_filter = ("category", "is_active", "paths")
+    list_display = ("name", "slug", "is_active", "created_at")
+    list_filter = ("is_active",)
     search_fields = ("name", "slug")
     prepopulated_fields = {"slug": ("name",)}
-    ordering = ("category", "name")
+    ordering = ("name",)
 
 
 @admin.register(ContentFile)

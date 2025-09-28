@@ -65,20 +65,9 @@ class Category(Section):
 class Topic(Section):
     """Topic for content inside a category."""
 
-    category = models.ForeignKey(
-        Category,
-        on_delete=models.CASCADE,
-        verbose_name='Category'
-    )  # Maybe remove link to category?
-    paths = models.ManyToManyField(
-        Path,
-        blank=True,
-        verbose_name='Content paths'
-    )
-
     class Meta:
         default_related_name = 'topics'
-        ordering = ['category', 'name']
+        ordering = ['name']
         verbose_name = 'topic'
         verbose_name_plural = "Topics"
 
