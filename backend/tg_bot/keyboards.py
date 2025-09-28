@@ -5,7 +5,7 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 from django.core.paginator import Paginator
 
 import tg_bot.callbacks as cb
-from content.models import Category, Theme, Type, ContentFile
+from content.models import Category, Topic, Path, ContentFile
 
 ITEMS_PER_PAGE = 8
 NUMBER_OF_KOLUMNS = 2
@@ -16,7 +16,7 @@ async def get_level1_menu():
     builder = InlineKeyboardBuilder()
 
     menu_items = await sync_to_async(list)(
-        Type.objects.all().values('name', 'slug')
+        Path.objects.all().values('name', 'slug')
     )
 
     for item in menu_items:
@@ -127,7 +127,7 @@ def get_level3_menu_data(
 ):
     """Синхронная функция для получения данных меню третьего уровня"""
     topics = list(
-        Theme.objects.filter(is_active=True).values('name', 'slug')
+        Topic.objects.filter(is_active=True).values('name', 'slug')
     )
 
     paginator = Paginator(topics, items_per_page)
