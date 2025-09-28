@@ -1,15 +1,23 @@
-from pathlib import Path
 import os
+from pathlib import Path
+
+from django.core.management.utils import get_random_secret_key
+from dotenv import load_dotenv
+
+
+load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.getenv('SECRET_KEY', 'default_key')
 
+DEBUG = os.getenv('DJANGO_DEBUG') == 'True'
+
 TELEGRAM_BOT_TOKEN = os.getenv('TG_TOKEN')
 
-DEBUG = os.getenv('DEBUG', 'False') == 'True'
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost, 127.0.0.1').split(', ')
 
-ALLOWED_HOSTS = ['*']
+CSRF_TRUSTED_ORIGINS = os.getenv('CSRF_TRUSTED_ORIGINS').split(',')
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -23,9 +31,9 @@ INSTALLED_APPS = [
     'drf_spectacular',
     'drf_spectacular_sidecar',
     'djoser',
-    'api.apps.ApiConfig',
-    'content.apps.ContentConfig',
-    'users.apps.UsersConfig',
+    'users',
+    'content',
+    'api',
     'tg_bot.apps.BotConfig',
 ]
 
@@ -119,9 +127,9 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'ru-RU'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Europe/Moscow'
 
 USE_I18N = True
 

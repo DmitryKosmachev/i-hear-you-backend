@@ -1,8 +1,6 @@
-version: '3.3'
-
 services:
   db:
-    image: postgres:15-alpine
+    image: postgres:18
     container_name: ihear-postgres
     env_file: .env
     ports:
@@ -23,8 +21,6 @@ services:
       db:
         condition: service_healthy
     volumes:
-      - users_migrations:/app/users/migrations
-      - content_migrations:/app/content/migrations
       - static:/backend_static
       - media:/app/media
 
@@ -42,7 +38,5 @@ services:
       - media:/app/media
 volumes:
   pg_data:
-  users_migrations:
-  content_migrations:
   static:
   media:

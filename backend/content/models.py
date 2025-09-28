@@ -1,29 +1,42 @@
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
-from django.utils.text import slugify
-import os
+from django.utils.text import slugify, Truncator
+
+from content.constants import (
+    MAX_FILENAME_CHARS,
+    MAX_NAME_CHARS,
+    MAX_OBJECT_CHARS,
+    MAX_SLUG_CHARS,
+    MAX_RATING_INT,
+    MIN_RATING_INT,
+    RATING_VALIDATION_ERROR
+)
+from users.models import BotUser
 
 
-class Type(models.Model):
-    """Тип контента."""
+class Section(models.Model):
+    """Abstract model for objects related to general struture."""
+
     name = models.CharField(
-        max_length=100,
-        unique=True,
-        verbose_name="Название типа"
+        'Name',
+        max_length=MAX_NAME_CHARS,
+        unique=True
     )
     slug = models.SlugField(
-        max_length=100,
+        'Slug',
+        max_length=MAX_SLUG_CHARS,
         unique=True,
-        verbose_name="URL-идентификатор",
         blank=True
     )
+    is_active = models.BooleanField('Active', default=True)
+    created_at = models.DateTimeField('Created', auto_now_add=True)
 
     class Meta:
-        verbose_name = "Тип контента"
-        verbose_name_plural = "Типы контента"
-        ordering = ["name"]
+        abstract = True
+        ordering = ['name', 'slug']
 
     def __str__(self):
-        return self.name
+        return Truncator(self.name).chars(MAX_OBJECT_CHARS)
 
     def save(self, *args, **kwargs):
         if not self.slug:
@@ -31,94 +44,130 @@ class Type(models.Model):
         super().save(*args, **kwargs)
 
 
-class Category(models.Model):
-    """Модель категории контента."""
-    name = models.CharField(max_length=100, unique=True, verbose_name="Название категории")
-    slug = models.SlugField(max_length=100, unique=True, blank=True, verbose_name="URL-идентификатор")
-    types = models.ManyToManyField(
-        "Type",
-        related_name="categories",
-        blank=True,
-        verbose_name="Типы контента"
-    )
-    is_active = models.BooleanField(default=True, verbose_name="Активна")
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата создания")
+class Path(Section):
+    """Global path to content for different target audiences
+    (parent, inquiring user etc.)
+    """
 
     class Meta:
-        verbose_name = "Категория"
-        verbose_name_plural = "Категории"
-        ordering = ['name']
+        verbose_name = 'content path'
+        verbose_name_plural = 'Content paths'
 
-    def __str__(self):
-        return self.name
 
-    def save(self, *args, **kwargs):
-        if not self.slug:
-            self.slug = slugify(self.name)
-        super().save(*args, **kwargs)
-
-class Theme(models.Model):
-    """Модель темы внутри категории."""
-    category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='themes', verbose_name="Категория")
-    name = models.CharField(max_length=200, verbose_name="Название темы")
-    slug = models.SlugField(max_length=200, blank=True, verbose_name="URL-идентификатор")
-    types = models.ManyToManyField(
-        "Type",
-        related_name="themes",
-        blank=True,
-        verbose_name="Типы контента"
-    )
-    is_active = models.BooleanField(default=True, verbose_name="Активна")
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата создания")
+class Category(Section):
+    """Content category (articles, videos, books etc.)"""
 
     class Meta:
-        verbose_name = "Тема"
-        verbose_name_plural = "Темы"
+        verbose_name = 'category'
+        verbose_name_plural = "Categories"
+
+
+class Topic(Section):
+    """Topic for content inside a category."""
+
+    category = models.ForeignKey(
+        Category,
+        on_delete=models.CASCADE,
+        verbose_name='Category'
+    )  # Maybe remove link to category?
+    paths = models.ManyToManyField(
+        Path,
+        blank=True,
+        verbose_name='Content paths'
+    )
+
+    class Meta:
+        default_related_name = 'topics'
         ordering = ['category', 'name']
-        unique_together = ['category', 'slug']
+        verbose_name = 'topic'
+        verbose_name_plural = "Topics"
 
     def __str__(self):
-        return f"{self.category.name} - {self.name}"
+        return Truncator(
+            f'{self.category.name} - {self.name}'
+        ).chars(MAX_OBJECT_CHARS)
 
-    def save(self, *args, **kwargs):
-        if not self.slug:
-            self.slug = slugify(self.name)
-        super().save(*args, **kwargs)
 
+class ContentFileQuerySet(models.query.QuerySet):
+    def annotate_rating(self):
+        """Annotate content queryset with user rating."""
+        return self.annotate(rating=models.Avg('ratings__rating'))
 
 class ContentFile(models.Model):
-    """Модель файла для темы."""
+    """Content unit (file)."""
 
     class FileType(models.TextChoices):
-        PDF = "PDF", "PDF документ"
-        IMAGE = "IMAGE", "Изображение"
-        TEXT = "TEXT", "Текстовый файл"
-        VIDEO = "VIDEO", "Видео"
-        AUDIO = "AUDIO", "Аудио"
-        OTHER = "OTHER", "Другой файл"
+        PDF = 'PDF', 'PDF document'
+        IMAGE = 'IMAGE', 'Image'
+        TEXT = 'TEXT', 'Text file'
+        VIDEO = 'VIDEO', 'Video'
+        AUDIO = 'AUDIO', 'Audio'
+        OTHER = 'OTHER', 'Other file type'
 
-    name = models.CharField(max_length=200, verbose_name="Название файла")
-    file = models.FileField(upload_to='content/files/', verbose_name="Файл")
+    name = models.CharField('Filename', max_length=MAX_NAME_CHARS)
+    file = models.FileField('File', upload_to='content/files/')
     file_type = models.CharField(
-        max_length=10,
+        'File type',
+        max_length=MAX_FILENAME_CHARS,
         choices=FileType.choices,
-        verbose_name="Тип файла",
         blank=False,
         null=False
     )
-    types = models.ManyToManyField(
-        "Type",
-        related_name="files",
+    paths = models.ManyToManyField(
+        Path,
         blank=True,
-        verbose_name="Типы контента"
+        verbose_name='Content paths'
     )
-    is_active = models.BooleanField(default=True, verbose_name="Активен")
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата создания")
+    categories = models.ManyToManyField(Category, verbose_name='Categories')
+    topics = models.ManyToManyField(Topic, verbose_name='Topics')
+    is_active = models.BooleanField('Active', default=True)
+    created_at = models.DateTimeField('Created', auto_now_add=True)
+    objects = ContentFileQuerySet.as_manager()
 
     class Meta:
-        verbose_name = "Файл"
-        verbose_name_plural = "Файлы"
-        ordering = ['name']
+        default_related_name = 'files'
+        verbose_name = 'file'
+        verbose_name_plural = 'Files'
+        ordering = ['name', 'file_type']
 
     def __str__(self):
-        return f"{self.name}"
+        return Truncator(self.name).chars(MAX_OBJECT_CHARS)
+
+
+class ContentRating(models.Model):
+    """User rating for content."""
+
+    content = models.ForeignKey(
+        ContentFile,
+        on_delete=models.CASCADE,
+        verbose_name='Content unit'
+    )
+    user = models.ForeignKey(
+        BotUser,
+        on_delete=models.SET_NULL,
+        null=True,
+        verbose_name='User'
+    )
+    rating = models.PositiveSmallIntegerField(
+        'Rating',
+        validators=[
+            MinValueValidator(MIN_RATING_INT, RATING_VALIDATION_ERROR),
+            MaxValueValidator(MAX_RATING_INT, RATING_VALIDATION_ERROR)
+        ]
+    )
+    created_at = models.DateTimeField('Created', auto_now_add=True)
+
+    class Meta:
+        default_related_name = 'ratings'
+        ordering = ['created_at', 'content', 'rating', 'user']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['content', 'user'],
+                name='unique_user_rating'
+            )
+        ]
+        verbose_name = 'user rating'
+        verbose_name_plural = 'Ratings'
+
+    def __str__(self):
+        return Truncator(f'{self.user}\'s rating').chars(MAX_OBJECT_CHARS)
