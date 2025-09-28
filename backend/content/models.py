@@ -29,6 +29,7 @@ class Section(models.Model):
         blank=True
     )
     is_active = models.BooleanField('Active', default=True)
+    created_at = models.DateTimeField('Created', auto_now_add=True)
 
     class Meta:
         abstract = True
@@ -118,8 +119,8 @@ class ContentFile(models.Model):
         blank=True,
         verbose_name='Content paths'
     )
-    category = models.ManyToManyField(Category, verbose_name='Category')
-    topic = models.ManyToManyField(Topic, verbose_name='Topic')
+    categories = models.ManyToManyField(Category, verbose_name='Categories')
+    topics = models.ManyToManyField(Topic, verbose_name='Topics')
     is_active = models.BooleanField('Active', default=True)
     created_at = models.DateTimeField('Created', auto_now_add=True)
     objects = ContentFileQuerySet.as_manager()
