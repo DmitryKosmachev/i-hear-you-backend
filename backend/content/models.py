@@ -71,11 +71,6 @@ class Topic(Section):
         verbose_name = 'topic'
         verbose_name_plural = "Topics"
 
-    def __str__(self):
-        return Truncator(
-            f'{self.category.name} - {self.name}'
-        ).chars(MAX_OBJECT_CHARS)
-
 
 class ContentFileQuerySet(models.query.QuerySet):
     def annotate_rating(self):
