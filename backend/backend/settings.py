@@ -9,9 +9,11 @@ load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = os.getenv('SECRET_KEY', get_random_secret_key())
+SECRET_KEY = os.getenv('SECRET_KEY', 'default_key')
 
 DEBUG = os.getenv('DJANGO_DEBUG') == 'True'
+
+TELEGRAM_BOT_TOKEN = os.getenv('TG_TOKEN')
 
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost, 127.0.0.1').split(', ')
 
@@ -32,6 +34,7 @@ INSTALLED_APPS = [
     'users',
     'content',
     'api',
+    'tg_bot.apps.BotConfig',
 ]
 
 REST_FRAMEWORK = {

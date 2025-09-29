@@ -77,7 +77,6 @@ class ContentFileQuerySet(models.query.QuerySet):
         """Annotate content queryset with user rating."""
         return self.annotate(rating=models.Avg('ratings__rating'))
 
-
 class ContentFile(models.Model):
     """Content unit (file)."""
 
