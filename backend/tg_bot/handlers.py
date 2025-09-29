@@ -1,7 +1,6 @@
-from aiogram import Router, Bot
-from aiogram.types import Message, CallbackQuery
+from aiogram import Bot, Router
 from aiogram.filters import CommandStart
-from aiogram.types import FSInputFile
+from aiogram.types import CallbackQuery, FSInputFile, Message
 
 import tg_bot.keyboards as kb
 import tg_bot.callbacks as cb
@@ -11,9 +10,13 @@ router = Router()
 
 
 LEVEL_TEXTS = {
-    'level1': 'Для кого предназначен контент:',
+    'level1': (
+        'Добро пожаловать! '
+        'Пожалуйста, выберите, с каким запросом Вы к нам пришли:'
+    ),
     'level2': 'Выберите категорию:',
-    'level3': 'Выберите тему:'
+    'level3': 'Выберите тему или нажмите "Показать все", '
+    'чтобы показать все материалы в категории:'
 }
 
 
@@ -25,7 +28,7 @@ async def send_media_file(
     level3: str,
     bot: Bot
 ):
-    """Отправка медиафайла и клавиатуры 'Назад'"""
+    """Display media and a Back button."""
     media_data = await kb.get_media_file_data(content_item_id)
     if 'error' in media_data:
         await query.message.edit_text(f'Ошибка: {media_data["error"]}')
@@ -75,7 +78,7 @@ async def send_media_file(
 
 @router.message(CommandStart())
 async def cmd_start(message: Message):
-    """Обработчик команды старт. Представление кнопок 1 уровня."""
+    """Handler for the start command. Representaiton for Level 1 buttons."""
     await message.answer(
         LEVEL_TEXTS['level1'],
         reply_markup=await kb.get_level1_menu()
@@ -87,7 +90,7 @@ async def handle_level1(
     callback: CallbackQuery,
     callback_data: cb.Level1Callback
 ):
-    """Обработчик кнопок 1 уровня меню. Представление кнопок 2 уровня."""
+    """"Handler for Level 1 buttons. Representation for Level 2 buttons."""
     text = LEVEL_TEXTS['level2']
     await callback.message.edit_text(
         text,
@@ -103,7 +106,7 @@ async def handle_paginate_level2(
     callback: CallbackQuery,
     callback_data: cb.PaginateLevel2Callback
 ):
-    """Обработчик кнопок 1 уровня. Пагинация кнопок 2 уровня."""
+    """Handler for Level 1 buttons. Pagination for Level 2 buttons."""
     await callback.message.edit_text(
         text=LEVEL_TEXTS['level2'],
         reply_markup=await kb.get_level2_menu(
@@ -119,7 +122,7 @@ async def handle_level2(
     callback: CallbackQuery,
     callback_data: cb.Level2Callback
 ):
-    """Обработчик кнопок 2 уровня меню. Представление кнопок 3 уровня."""
+    """Handler for Level 2 buttons. Representation for Level 3 buttons."""
     text = LEVEL_TEXTS['level3']
     await callback.message.edit_text(
         text,
@@ -135,7 +138,7 @@ async def handle_paginate_level3(
     callback: CallbackQuery,
     callback_data: cb.PaginateLevel3Callback
 ):
-    """Обработчик кнопок 2 уровня меню. Пагинация кнопок уровня 3."""
+    """Handler for Level 2 buttons. Pagination for Level 3 buttons."""
     await callback.message.edit_text(
         text=LEVEL_TEXTS['level3'],
         reply_markup=await kb.get_level3_menu(
@@ -152,9 +155,9 @@ async def handle_level3(
     callback: CallbackQuery,
     callback_data: cb.Level3Callback
 ):
-    """Обработчик кнопок 3 уровня меню. Представление списка контента."""
+    """Handler for Level 3 buttons. Representation for the content list."""
     await callback.message.edit_text(
-        text='Контент',
+        text='Материалы:',
         reply_markup=await kb.get_content_menu(
             level1_choice=callback_data.level1,
             level2_choice=callback_data.level2,
@@ -169,9 +172,9 @@ async def handle_paginate_content(
     callback: CallbackQuery,
     callback_data: cb.PaginateContentCallback
 ):
-    """Обработчик кнопок 3 уровня меню. Пагинация контента."""
+    """Handler for Level 3 buttons. Pagination for content."""
     await callback.message.edit_text(
-        text='Контент',
+        text='Материалы:',
         reply_markup=await kb.get_content_menu(
             level1_choice=callback_data.level1,
             level2_choice=callback_data.level2,
@@ -225,7 +228,7 @@ async def content_description_handler(
     query: CallbackQuery,
     callback_data: cb.ContentDescriptionCallback
 ):
-    """Обработчик описания контента"""
+    """Handler for content description."""
     text, markup = await kb.get_content_description(
         callback_data.level1,
         callback_data.level2,
@@ -268,7 +271,7 @@ async def content_media_handler(
     callback_data: cb.ContentMediaCallback,
     bot: Bot
 ):
-    """Обработчик медиафайлов"""
+    """Handler for media files."""
     await query.message.delete()
     await send_media_file(
         query,
@@ -285,7 +288,7 @@ async def back_to_content_list_handler(
     query: CallbackQuery,
     callback_data: cb.BackToContentListCallback
 ):
-    """Обработчик возврата к списку контента"""
+    """Handler for the back-to-content-list button."""
     markup = await kb.get_content_menu(
         callback_data.level1,
         callback_data.level2,

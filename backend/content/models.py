@@ -3,6 +3,7 @@ from django.db import models
 from django.utils.text import slugify, Truncator
 
 from content.constants import (
+    MAX_DESCRIPTION_CHARS,
     MAX_FILENAME_CHARS,
     MAX_NAME_CHARS,
     MAX_OBJECT_CHARS,
@@ -25,8 +26,7 @@ class Section(models.Model):
     slug = models.SlugField(
         'Slug',
         max_length=MAX_SLUG_CHARS,
-        unique=True,
-        blank=True
+        unique=True
     )
     is_active = models.BooleanField('Active', default=True)
     created_at = models.DateTimeField('Created', auto_now_add=True)
@@ -66,8 +66,6 @@ class Topic(Section):
     """Topic for content inside a category."""
 
     class Meta:
-        default_related_name = 'topics'
-        ordering = ['name']
         verbose_name = 'topic'
         verbose_name_plural = "Topics"
 
@@ -76,6 +74,7 @@ class ContentFileQuerySet(models.query.QuerySet):
     def annotate_rating(self):
         """Annotate content queryset with user rating."""
         return self.annotate(rating=models.Avg('ratings__rating'))
+
 
 class ContentFile(models.Model):
     """Content unit (file)."""
@@ -90,12 +89,15 @@ class ContentFile(models.Model):
 
     name = models.CharField('Filename', max_length=MAX_NAME_CHARS)
     file = models.FileField('File', upload_to='content/files/')
+    description = models.TextField(
+        'Description',
+        max_length=MAX_DESCRIPTION_CHARS,
+        blank=True
+    )
     file_type = models.CharField(
         'File type',
         max_length=MAX_FILENAME_CHARS,
-        choices=FileType.choices,
-        blank=False,
-        null=False
+        choices=FileType.choices
     )
     paths = models.ManyToManyField(
         Path,
@@ -103,7 +105,7 @@ class ContentFile(models.Model):
         verbose_name='Content paths'
     )
     categories = models.ManyToManyField(Category, verbose_name='Categories')
-    topics = models.ManyToManyField(Topic, verbose_name='Topics')
+    topics = models.ManyToManyField(Topic, blank=True, verbose_name='Topics')
     is_active = models.BooleanField('Active', default=True)
     created_at = models.DateTimeField('Created', auto_now_add=True)
     objects = ContentFileQuerySet.as_manager()

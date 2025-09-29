@@ -1,31 +1,31 @@
 import os
-from asgiref.sync import sync_to_async
+
 from aiogram.types import InlineKeyboardButton
 from aiogram.utils.keyboard import InlineKeyboardBuilder
+from asgiref.sync import sync_to_async
 from django.core.paginator import Paginator
 
 import tg_bot.callbacks as cb
-from content.models import Category, Topic, Path, ContentFile
-
-ITEMS_PER_PAGE = 8
-NUMBER_OF_KOLUMNS = 2
+from content.models import Category, ContentFile, Path, Topic
+from tg_bot.constants import ITEMS_PER_PAGE, PATH_COLUMNS, DEFAULT_COLUMNS
 
 
 async def get_level1_menu():
-    """Стартовое меню. Данные загружаются из БД."""
+    """Start menu (path). Load data from the database."""
     builder = InlineKeyboardBuilder()
-
     menu_items = await sync_to_async(list)(
         Path.objects.all().values('name', 'slug')
     )
 
     for item in menu_items:
-        builder.add(InlineKeyboardButton(
-            text=item['name'],
-            callback_data=cb.Level1Callback(choice=item['slug']).pack()
-        ))
+        builder.add(
+            InlineKeyboardButton(
+                text=item['name'],
+                callback_data=cb.Level1Callback(choice=item['slug']).pack()
+            )
+        )
 
-    builder.adjust(NUMBER_OF_KOLUMNS)
+    builder.adjust(PATH_COLUMNS)
     return builder.as_markup()
 
 
@@ -35,10 +35,12 @@ def get_categories_page(
     page: int = 1,
     items_per_page: int = ITEMS_PER_PAGE
 ):
-    """Синхронная функция для получения страницы категорий"""
-    categories = list(
-        Category.objects.filter(is_active=True).values('name', 'slug')
-    )
+    """Get a page with categories."""
+    categories = Category.objects.filter(
+        is_active=True,
+        files__is_active=True,
+        files__paths__slug=level1_choice
+        ).distinct().values('name', 'slug')
     paginator = Paginator(categories, items_per_page)
     current_page = paginator.get_page(page)
 
@@ -67,21 +69,37 @@ async def get_level2_menu(
     page: int = 1,
     items_per_page: int = ITEMS_PER_PAGE
 ):
-    """Меню второго уровня. Категории."""
+    """Level 2 menu. Categories."""
     builder = InlineKeyboardBuilder()
     page_data = await get_categories_page(level1_choice, page, items_per_page)
     categories = page_data['categories']
 
     for cat in categories:
-        builder.add(InlineKeyboardButton(
-            text=cat['name'],
-            callback_data=cb.Level2Callback(
+        has_topics = await sync_to_async(
+            lambda: Topic.objects.filter(
+                is_active=True,
+                files__is_active=True,
+                files__paths__slug=level1_choice,
+                files__categories__slug=cat['slug']
+            ).exists()
+        )()
+        callback_data = (
+            cb.Level3Callback(
                 level1=level1_choice,
-                category=cat['slug'],
-            ).pack()
-        ))
+                level2=cat['slug'],
+                topic="all"
+            )
+            if not has_topics
+            else cb.Level2Callback(level1=level1_choice, category=cat['slug'])
+        )
+        builder.add(
+            InlineKeyboardButton(
+                text=cat['name'],
+                callback_data=callback_data.pack()
+            )
+        )
 
-    builder.adjust(NUMBER_OF_KOLUMNS)
+    builder.adjust(DEFAULT_COLUMNS)
 
     if page_data['num_pages'] > 1:
         pagination_row = []
@@ -121,15 +139,18 @@ async def get_level2_menu(
 
 @sync_to_async
 def get_level3_menu_data(
+    level1_choice: str,
     level2_choice: str,
     page: int = 1,
     items_per_page: int = ITEMS_PER_PAGE
 ):
-    """Синхронная функция для получения данных меню третьего уровня"""
-    topics = list(
-        Topic.objects.filter(is_active=True).values('name', 'slug')
-    )
-
+    """Get data for the Level 3 menu (topics)."""
+    topics = Topic.objects.filter(
+        is_active=True,
+        files__is_active=True,
+        files__paths__slug=level1_choice,
+        files__categories__slug=level2_choice,
+        ).distinct().values('name', 'slug')
     paginator = Paginator(topics, items_per_page)
     current_page = paginator.get_page(page)
 
@@ -158,10 +179,15 @@ async def get_level3_menu(
     page: int = 1,
     items_per_page: int = ITEMS_PER_PAGE
 ):
-    """Меню третьего уровня. Темы."""
+    """Level 3 menu. Topics."""
     builder = InlineKeyboardBuilder()
 
-    page_data = await get_level3_menu_data(level2_choice, page, items_per_page)
+    page_data = await get_level3_menu_data(
+        level1_choice,
+        level2_choice,
+        page,
+        items_per_page
+    )
     topics = page_data['topics']
 
     for topic in topics:
@@ -175,7 +201,17 @@ async def get_level3_menu(
                 ).pack()
             )
         )
-    builder.adjust(NUMBER_OF_KOLUMNS)
+    builder.add(
+        InlineKeyboardButton(
+            text="👀 Показать все",
+            callback_data=cb.Level3Callback(
+                level1=level1_choice,
+                level2=level2_choice,
+                topic="all"
+            ).pack()
+        )
+    )
+    builder.adjust(DEFAULT_COLUMNS)
 
     if page_data['num_pages'] > 1:
         pagination_row = []
@@ -215,17 +251,23 @@ async def get_level3_menu(
 
 @sync_to_async
 def get_content_menu_data(
+    level1_choice: str,
+    level2_choice: str,
     level3_choice: str,
     page: int = 1,
     items_per_page: int = ITEMS_PER_PAGE
 ):
-    """Синхронная функция для получения списка контента"""
-    content_items = list(
-        ContentFile.objects.filter(is_active=True).values('name', 'id')
-    )
-    # content_items = list(
-    #     ContentFile.objects.filter(is_active=True, theme__slug=level3_choice).values('name', 'slug')
-    # )
+    """Get a list of content."""
+    filters = {
+        'is_active': True,
+        'paths__slug': level1_choice,
+        'categories__slug': level2_choice
+    }
+    if level3_choice != "all":
+        filters['topics__slug'] = level3_choice
+    content_items = ContentFile.objects.filter(
+        **filters
+    ).distinct().values('name', 'id')
     paginator = Paginator(content_items, items_per_page)
     current_page = paginator.get_page(page)
     return {
@@ -254,10 +296,13 @@ async def get_content_menu(
     page: int = 1,
     items_per_page: int = ITEMS_PER_PAGE
 ):
-    """Меню контента - список элементов."""
+    """Content menu with a list of elements."""
     builder = InlineKeyboardBuilder()
     page_data = await get_content_menu_data(
-        level3_choice, page,
+        level1_choice,
+        level2_choice,
+        level3_choice,
+        page,
         items_per_page
     )
     content_items = page_data['content_items']
@@ -302,20 +347,24 @@ async def get_content_menu(
                 ).pack()
             ))
         builder.row(*pagination_row)
-    builder.row(InlineKeyboardButton(
-        text='⬅️ Назад',
-        callback_data=cb.BackLevel3Callback(
-            level1=level1_choice,
-            level2=level2_choice
-        ).pack()
-    ))
+    back_callback = (
+        cb.BackLevel2Callback(level1=level1_choice)
+        if level3_choice == "all"
+        else cb.BackLevel3Callback(level1=level1_choice, level2=level2_choice)
+    )
+    builder.row(
+        InlineKeyboardButton(
+            text='⬅️ Назад',
+            callback_data=back_callback.pack()
+        )
+    )
 
     return builder.as_markup()
 
 
 @sync_to_async
 def get_content_item_data(content_item_id: str) -> dict:
-    """Получаем данные конкретного контента по ID"""
+    """Get content item data by ID."""
     try:
         content_item = ContentFile.objects.get(
             id=content_item_id,
@@ -324,23 +373,19 @@ def get_content_item_data(content_item_id: str) -> dict:
 
         return {
             'title': content_item.name,
-            'description': getattr(
-                content_item,
-                'description',
-                'Описание отсутствует'
-            ),
+            'description': getattr(content_item, 'description'),
             'content_type': content_item.file_type,
         }
     except ContentFile.DoesNotExist:
         return {
-            'title': 'Контент не найден',
-            'description': 'Извините, данный контент временно недоступен',
+            'title': 'Материал не найден',
+            'description': 'Извините, данный материал временно недоступен',
         }
 
 
 @sync_to_async
 def get_media_file_data(content_item_id: str) -> dict:
-    """Получаем данные медиафайла"""
+    """Get media file data."""
     try:
         content_item = ContentFile.objects.get(
             id=content_item_id,
@@ -355,7 +400,7 @@ def get_media_file_data(content_item_id: str) -> dict:
             'file_obj': content_item.file
         }
     except ContentFile.DoesNotExist:
-        return {'error': 'Контент не найден'}
+        return {'error': 'Материал не найден'}
     except Exception as e:
         return {'error': f'Ошибка: {str(e)}'}
 
@@ -366,7 +411,7 @@ def get_content_page_data(
     page: int,
     chars_per_page: int = 4000
 ) -> dict:
-    """Получаем данные конкретной страницы контента из txt файла"""
+    """Get paginated data from a TXT content file."""
     try:
         content_item = ContentFile.objects.get(
             id=content_item_id,
@@ -414,7 +459,7 @@ def get_content_page_data(
         }
     except ContentFile.DoesNotExist:
         return {
-            'content': "Контент не найден",
+            'content': "Материал не найден",
             'total_pages': 1,
             'current_page': 1
         }
@@ -433,7 +478,7 @@ async def get_content_description(
     level3_choice: str,
     content_item: str
 ):
-    """Страница с описанием контента - разделяем текст и медиа."""
+    """Get a page with content description, separating text and media."""
     content_data = await get_content_item_data(content_item)
 
     builder = InlineKeyboardBuilder()
@@ -480,18 +525,22 @@ async def get_content_description(
 
     builder.adjust(1)
 
-    type_names = {
-        'text': 'Текст',
-        'photo': 'Фотография',
-        'video': 'Видео',
-        'document': 'Документ',
-        'audio': 'Аудио'
-    }
+    # Эти типы сейчас не работают. Мне кажется, можно их убрать,
+    # т.к. у нас уже есть определение разных типов для button_texts
+    # - Иван
+
+    # type_names = {
+    #     'text': 'Текст',
+    #     'photo': 'Фотография',
+    #     'video': 'Видео',
+    #     'document': 'Документ',
+    #     'audio': 'Аудио'
+    # }
 
     description_text = (
         f'📚 <b>{content_data["title"]}</b>\n\n'
-        f'{content_data["description"]}\n\n'
-        f'📋 Тип: {type_names.get(content_data["content_type"], "Файл")}'
+        f'{content_data["description"]}'
+        # f'📋 Тип: {type_names.get(content_data["content_type"], "Файл")}'
     )
 
     return description_text, builder.as_markup()
@@ -504,7 +553,7 @@ async def get_content_page(
     content_item: str,
     page: int = 1
 ):
-    """Страница контента с пагинацией."""
+    """Get a content page."""
     page_data = await get_content_page_data(content_item, page)
     builder = InlineKeyboardBuilder()
     if page_data['total_pages'] > 1:
@@ -560,7 +609,7 @@ async def get_media_back_keyboard(
     level3_choice: str,
     content_item: str
 ):
-    """Клавиатура Назад для медиафайлов"""
+    """Get a Back button for media files."""
     builder = InlineKeyboardBuilder()
     builder.row(InlineKeyboardButton(
         text='⬅️ Назад к описанию',
