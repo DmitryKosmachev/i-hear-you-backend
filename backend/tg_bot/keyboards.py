@@ -7,7 +7,7 @@ from django.core.paginator import Paginator
 
 import tg_bot.callbacks as cb
 from content.models import Category, ContentFile, Path, Topic
-from tg_bot.constants import ITEMS_PER_PAGE, PATH_COLUMNS, DEFAULT_COLUMNS
+from tg_bot.constants import DEFAULT_COLUMNS, ITEMS_PER_PAGE, PATH_COLUMNS
 
 
 async def get_level1_menu():

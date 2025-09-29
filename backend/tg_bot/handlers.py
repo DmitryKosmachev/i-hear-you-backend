@@ -1,7 +1,6 @@
 from aiogram import Bot, Router
 from aiogram.filters import CommandStart
 from aiogram.types import CallbackQuery, FSInputFile, Message
-from django.conf import settings
 
 import tg_bot.keyboards as kb
 import tg_bot.callbacks as cb
