@@ -4,42 +4,67 @@ from .models import Category, ContentFile, ContentRating, Topic, Path
 
 @admin.register(Path)
 class PathAdmin(admin.ModelAdmin):
-    list_display = ("name", "slug")
-    prepopulated_fields = {"slug": ("name",)}
-    search_fields = ("name",)
+    list_display = ['name', 'slug']
+    prepopulated_fields = {'slug': ['name']}
+    search_fields = ['name']
 
 
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
-    list_display = ("name", "slug", "is_active", "created_at")
-    list_filter = ("is_active",)
-    search_fields = ("name", "slug")
-    prepopulated_fields = {"slug": ("name",)}
-    ordering = ("name",)
+    list_display = ['name', 'slug', 'is_active', 'created_at']
+    list_filter = ['is_active']
+    search_fields = ['name', 'slug']
+    prepopulated_fields = {'slug': ['name']}
+    ordering = ['name']
 
 
 @admin.register(Topic)
 class TopicAdmin(admin.ModelAdmin):
-    list_display = ("name", "slug", "is_active", "created_at")
-    list_filter = ("is_active",)
-    search_fields = ("name", "slug")
-    prepopulated_fields = {"slug": ("name",)}
-    ordering = ("name",)
+    list_display = ['name', 'slug', 'is_active', 'created_at']
+    list_filter = ['is_active']
+    search_fields = ['name', 'slug']
+    prepopulated_fields = {'slug': ['name']}
+    ordering = ['name']
 
 
 @admin.register(ContentFile)
 class ContentFileAdmin(admin.ModelAdmin):
-    list_display = ("name", "file_type", "rating", "is_active", "created_at")
-    list_filter = ("file_type", "is_active", "paths", "categories", "topics")
-    search_fields = ("name",)
-    filter_horizontal = ("paths",)
-    ordering = ("name",)
+    list_display = [
+        'name',
+        'file_type',
+        'rating',
+        'get_paths',
+        'get_topics',
+        'get_categories',
+        'is_active',
+        'created_at'
+    ]
+    list_filter = ['is_active', 'file_type', 'paths', 'categories', 'topics']
+    list_editable = ['is_active']
+    search_fields = ['name']
+    filter_horizontal = ['categories', 'topics']
+    ordering = ['name']
 
     def get_queryset(self, request):
-        return super().get_queryset(request).annotate_rating()
+        return super(
+        ).get_queryset(
+            request
+        ).annotate_rating().prefetch_related('categories', 'topics')
 
     def rating(self, obj):
         return obj.rating
+
+    @admin.display(description='Paths')
+    def get_paths(self, obj):
+        return ", ".join(path.name for path in obj.paths.all())
+
+    @admin.display(description='Topics')
+    def get_topics(self, obj):
+        return ", ".join(topic.name for topic in obj.topics.all())
+
+    @admin.display(description='Categories')
+    def get_categories(self, obj):
+        return ", ".join(category.name for category in obj.categories.all())
 
 
 @admin.register(ContentRating)
