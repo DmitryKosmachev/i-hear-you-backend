@@ -261,13 +261,16 @@ def get_content_menu_data(
     items_per_page: int = ITEMS_PER_PAGE
 ):
     """Get a list of content."""
+    filters = {
+        'is_active': True,
+        'paths__slug': level1_choice,
+        'categories__slug': level2_choice
+    }
+    if level3_choice != "all":
+        filters['topics__slug'] = level3_choice
     content_items = ContentFile.objects.filter(
-        is_active=True,
-        paths__slug=level1_choice,
-        categories__slug=level2_choice
+        **filters
     ).distinct().values('name', 'id')
-    if level3_choice != 'all':
-        content_items = content_items.filter(topics__slug=level3_choice)
     paginator = Paginator(content_items, items_per_page)
     current_page = paginator.get_page(page)
     return {

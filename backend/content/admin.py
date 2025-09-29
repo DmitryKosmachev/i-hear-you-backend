@@ -1,5 +1,6 @@
 from django.contrib import admin
-from .models import Category, ContentFile, ContentRating, Topic, Path
+
+from content.models import Category, ContentFile, ContentRating, Topic, Path
 
 
 @admin.register(Path)
