@@ -7,6 +7,7 @@ from django.core.management.base import BaseCommand
 from django.conf import settings
 
 from tg_bot.handlers import router
+from tg_bot.middleware import UserActivityMiddleware
 
 
 class Command(BaseCommand):
@@ -53,6 +54,7 @@ class Command(BaseCommand):
         bot = Bot(token=token)
         dp = Dispatcher()
         dp.include_router(router)
+        dp.update.middleware(UserActivityMiddleware())
 
         self.stdout.write(self.style.SUCCESS('✅ Bot started!'))
 
