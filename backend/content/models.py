@@ -25,8 +25,7 @@ class Section(models.Model):
     slug = models.SlugField(
         'Slug',
         max_length=MAX_SLUG_CHARS,
-        unique=True,
-        blank=True
+        unique=True
     )
     is_active = models.BooleanField('Active', default=True)
     created_at = models.DateTimeField('Created', auto_now_add=True)
