@@ -525,22 +525,9 @@ async def get_content_description(
 
     builder.adjust(1)
 
-    # Эти типы сейчас не работают. Мне кажется, можно их убрать,
-    # т.к. у нас уже есть определение разных типов для button_texts
-    # - Иван
-
-    # type_names = {
-    #     'text': 'Текст',
-    #     'photo': 'Фотография',
-    #     'video': 'Видео',
-    #     'document': 'Документ',
-    #     'audio': 'Аудио'
-    # }
-
     description_text = (
         f'📚 <b>{content_data["title"]}</b>\n\n'
         f'{content_data["description"]}'
-        # f'📋 Тип: {type_names.get(content_data["content_type"], "Файл")}'
     )
 
     return description_text, builder.as_markup()
