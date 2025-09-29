@@ -7,10 +7,7 @@ from django.core.paginator import Paginator
 
 import tg_bot.callbacks as cb
 from content.models import Category, ContentFile, Path, Topic
-
-
-ITEMS_PER_PAGE = 8
-NUMBER_OF_COLUMNS = 2
+from tg_bot.constants import ITEMS_PER_PAGE, PATH_COLUMNS, DEFAULT_COLUMNS
 
 
 async def get_level1_menu():
@@ -28,7 +25,7 @@ async def get_level1_menu():
             )
         )
 
-    builder.adjust(NUMBER_OF_COLUMNS)
+    builder.adjust(PATH_COLUMNS)
     return builder.as_markup()
 
 
@@ -102,7 +99,7 @@ async def get_level2_menu(
             )
         )
 
-    builder.adjust(NUMBER_OF_COLUMNS)
+    builder.adjust(DEFAULT_COLUMNS)
 
     if page_data['num_pages'] > 1:
         pagination_row = []
@@ -214,7 +211,7 @@ async def get_level3_menu(
             ).pack()
         )
     )
-    builder.adjust(NUMBER_OF_COLUMNS)
+    builder.adjust(DEFAULT_COLUMNS)
 
     if page_data['num_pages'] > 1:
         pagination_row = []
