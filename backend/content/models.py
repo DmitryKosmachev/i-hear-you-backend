@@ -3,6 +3,7 @@ from django.db import models
 from django.utils.text import slugify, Truncator
 
 from content.constants import (
+    MAX_DESCRIPTION_CHARS,
     MAX_FILENAME_CHARS,
     MAX_NAME_CHARS,
     MAX_OBJECT_CHARS,
@@ -88,12 +89,15 @@ class ContentFile(models.Model):
 
     name = models.CharField('Filename', max_length=MAX_NAME_CHARS)
     file = models.FileField('File', upload_to='content/files/')
+    description = models.TextField(
+        'Description',
+        max_length=MAX_DESCRIPTION_CHARS,
+        blank=True
+    )
     file_type = models.CharField(
         'File type',
         max_length=MAX_FILENAME_CHARS,
-        choices=FileType.choices,
-        blank=False,
-        null=False
+        choices=FileType.choices
     )
     paths = models.ManyToManyField(
         Path,

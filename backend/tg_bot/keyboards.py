@@ -376,11 +376,7 @@ def get_content_item_data(content_item_id: str) -> dict:
 
         return {
             'title': content_item.name,
-            'description': getattr(
-                content_item,
-                'description',
-                'Описание отсутствует'
-            ),
+            'description': getattr(content_item, 'description'),
             'content_type': content_item.file_type,
         }
     except ContentFile.DoesNotExist:
@@ -532,18 +528,22 @@ async def get_content_description(
 
     builder.adjust(1)
 
-    type_names = {
-        'text': 'Текст',
-        'photo': 'Фотография',
-        'video': 'Видео',
-        'document': 'Документ',
-        'audio': 'Аудио'
-    }
+    # Эти типы сейчас не работают. Мне кажется, можно их убрать,
+    # т.к. у нас уже есть определение разных типов для button_texts
+    # - Иван
+
+    # type_names = {
+    #     'text': 'Текст',
+    #     'photo': 'Фотография',
+    #     'video': 'Видео',
+    #     'document': 'Документ',
+    #     'audio': 'Аудио'
+    # }
 
     description_text = (
         f'📚 <b>{content_data["title"]}</b>\n\n'
-        f'{content_data["description"]}\n\n'
-        f'📋 Тип: {type_names.get(content_data["content_type"], "Файл")}'
+        f'{content_data["description"]}'
+        # f'📋 Тип: {type_names.get(content_data["content_type"], "Файл")}'
     )
 
     return description_text, builder.as_markup()
