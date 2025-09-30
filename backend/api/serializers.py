@@ -59,15 +59,18 @@ class TopicSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-class ContentFileSerializer(serializers.ModelSerializer):
-
-    class Meta:
-        model = ContentFile
-        fields = '__all__'
-
-
 class PathSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Path
+        fields = '__all__'
+
+
+class ContentFileSerializer(serializers.ModelSerializer):
+    categories = CategorySerializer(many=True, read_only=True)
+    topics = TopicSerializer(many=True, read_only=True)
+    paths = PathSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = ContentFile
         fields = '__all__'
