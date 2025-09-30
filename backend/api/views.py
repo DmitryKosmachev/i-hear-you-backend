@@ -2,13 +2,14 @@ from rest_framework import viewsets
 from rest_framework_simplejwt.views import TokenObtainPairView
 
 from api.serializers import (
+    BotMessageSerializer,
     CategorySerializer,
     ContentFileSerializer,
     CustomTokenObtainPairSerializer,
     TopicSerializer,
     PathSerializer
 )
-from content.models import Category, ContentFile, Topic, Path
+from content.models import BotMessage, Category, ContentFile, Topic, Path
 
 
 class CustomTokenObtainPairView(TokenObtainPairView):
@@ -33,3 +34,8 @@ class ContentFileViewSet(viewsets.ModelViewSet):
 class PathViewSet(viewsets.ModelViewSet):
     queryset = Path.objects.all()
     serializer_class = PathSerializer
+
+
+class BotMessageViewSet(viewsets.ModelViewSet):
+    queryset = BotMessage.objects.all()
+    serializer_class = BotMessageSerializer
