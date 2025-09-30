@@ -8,7 +8,6 @@ import tg_bot.callbacks as cb
 
 router = Router()
 
-
 LEVEL_TEXTS = {
     'level1': (
         'Добро пожаловать! '
@@ -71,9 +70,9 @@ async def send_media_file(
                 reply_markup=markup,
                 parse_mode='HTML'
             )
-        await query.answer('Медиа отправлено!')
+        await query.answer('Материал отправлен!')
     except Exception as e:
-        await query.message.edit_text(f'Ошибка отправки медиа: {str(e)}')
+        await query.message.edit_text(f'Ошибка отправки материала: {str(e)}')
 
 
 @router.message(CommandStart())
@@ -83,6 +82,7 @@ async def cmd_start(message: Message):
         LEVEL_TEXTS['level1'],
         reply_markup=await kb.get_level1_menu()
     )
+    await message.delete()
 
 
 @router.callback_query(cb.Level1Callback.filter())
@@ -272,6 +272,7 @@ async def content_media_handler(
     bot: Bot
 ):
     """Handler for media files."""
+    loading_message = await query.message.answer('⏳ Файл загружается...')
     await query.message.delete()
     await send_media_file(
         query,
@@ -281,6 +282,7 @@ async def content_media_handler(
         callback_data.level3,
         bot
     )
+    await loading_message.delete()
 
 
 @router.callback_query(cb.BackToContentListCallback.filter())

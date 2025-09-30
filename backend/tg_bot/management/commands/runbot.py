@@ -1,6 +1,5 @@
 import asyncio
 import logging
-import os
 
 from aiogram import Bot, Dispatcher
 from django.core.management.base import BaseCommand
@@ -23,9 +22,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         logging.basicConfig(level=logging.INFO)
 
-        token = (options.get('token') or
-                 os.getenv('TG_TOKEN') or
-                 getattr(settings, 'TELEGRAM_BOT_TOKEN', None))
+        token = (options.get('token') or settings.TELEGRAM_BOT_TOKEN)
 
         if not token:
             self.stderr.write(
@@ -33,8 +30,7 @@ class Command(BaseCommand):
                     '❌ Bot token not found. '
                     'Enter token using one of the methods:\n'
                     '   - Command argument --token <token>\n'
-                    '   - Via enviromental variable TG_TOKEN\n'
-                    '   - Via setting TELEGRAM_BOT_TOKEN in settings.py'
+                    '   - Via enviromental variable TELEGRAM_BOT_TOKEN'
                 )
             )
             return
