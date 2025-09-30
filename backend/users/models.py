@@ -8,7 +8,7 @@ class StaffUserManager(BaseUserManager):
 
     def create_user(self, email, password=None, **extra_fields):
         if not email:
-            raise ValueError("У пользователя должен быть email")
+            raise ValueError('Please enter email')
         email = self.normalize_email(email)
         user = self.model(email=email, **extra_fields)
         user.set_password(password)
@@ -18,14 +18,14 @@ class StaffUserManager(BaseUserManager):
         return user
 
     def create_superuser(self, email, password=None, **extra_fields):
-        extra_fields.setdefault("is_staff", True)
-        extra_fields.setdefault("is_superuser", True)
+        extra_fields.setdefault('is_staff', True)
+        extra_fields.setdefault('is_superuser', True)
         return self.create_user(email, password, **extra_fields)
 
 
 class StaffUser(AbstractUser):
-    USERNAME_FIELD = "email"
-    REQUIRED_FIELDS = ["username", "first_name", "last_name"]
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = ['username', 'first_name', 'last_name']
 
     username = models.CharField()
     email = models.EmailField(unique=True)
@@ -35,52 +35,31 @@ class StaffUser(AbstractUser):
     objects = StaffUserManager()
 
     class Meta:
-        verbose_name = "Сотрудник"
-        verbose_name_plural = "Сотрудники"
+        verbose_name = 'Staff user'
+        verbose_name_plural = 'Staff users'
 
 
 class BotUser(models.Model):
-    telegram_id = models.BigIntegerField(
-        unique=True,
-        verbose_name="ID в Telegram"
+    telegram_id = models.BigIntegerField('Telegram ID', unique=True)
+    username = models.CharField('Username', blank=True, null=True)
+    first_name = models.CharField('First name', blank=True, null=True)
+    last_active = models.DateTimeField('Last active', default=timezone.now
     )
-    username = models.CharField(
-        max_length=255,
-        blank=True,
-        null=True,
-        verbose_name="Username в Telegram"
-    )
-    first_name = models.CharField(
-        max_length=255,
-        blank=True,
-        null=True,
-        verbose_name="Имя в Telegram"
-    )
-    last_active = models.DateTimeField(
-        default=timezone.now,
-        verbose_name="Последняя активность"
-    )
-    is_active = models.BooleanField(
-        default=True,
-        verbose_name="Активен"
-    )
-    created_at = models.DateTimeField(
-        auto_now_add=True,
-        verbose_name="Дата регистрации"
-    )
+    is_active = models.BooleanField('Active', default=True)
+    created_at = models.DateTimeField('Sign-up date', auto_now_add=True)
 
     class Meta:
-        verbose_name = "Пользователь бота"
-        verbose_name_plural = "Пользователи бота"
+        verbose_name = 'bot user'
+        verbose_name_plural = 'Bot users'
 
     def __str__(self):
         if self.username:
-            return f"@{self.username} ({self.telegram_id})"
+            return f'@{self.username} ({self.telegram_id})'
         elif self.first_name:
-            return f"{self.first_name} ({self.telegram_id})"
+            return f'{self.first_name} ({self.telegram_id})'
         else:
             return str(self.telegram_id)
 
     def is_inactive(self, days=10):
-        """Проверяет, неактивен ли пользователь более N дней"""
+        """Check if the user was inactive for more than N days."""
         return (timezone.now() - self.last_active).days >= days

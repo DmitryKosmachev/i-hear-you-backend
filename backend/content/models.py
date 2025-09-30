@@ -3,6 +3,7 @@ from django.db import models
 from django.utils.text import slugify, Truncator
 
 from content.constants import (
+    MAX_DESCRIPTION_CHARS,
     MAX_FILENAME_CHARS,
     MAX_NAME_CHARS,
     MAX_OBJECT_CHARS,
@@ -25,8 +26,7 @@ class Section(models.Model):
     slug = models.SlugField(
         'Slug',
         max_length=MAX_SLUG_CHARS,
-        unique=True,
-        blank=True
+        unique=True
     )
     is_active = models.BooleanField('Active', default=True)
     created_at = models.DateTimeField('Created', auto_now_add=True)
@@ -66,15 +66,8 @@ class Topic(Section):
     """Topic for content inside a category."""
 
     class Meta:
-        default_related_name = 'topics'
-        ordering = ['name']
         verbose_name = 'topic'
         verbose_name_plural = "Topics"
-
-    def __str__(self):
-        return Truncator(
-            f'{self.category.name} - {self.name}'
-        ).chars(MAX_OBJECT_CHARS)
 
 
 class ContentFileQuerySet(models.query.QuerySet):
@@ -96,12 +89,15 @@ class ContentFile(models.Model):
 
     name = models.CharField('Filename', max_length=MAX_NAME_CHARS)
     file = models.FileField('File', upload_to='content/files/')
+    description = models.TextField(
+        'Description',
+        max_length=MAX_DESCRIPTION_CHARS,
+        blank=True
+    )
     file_type = models.CharField(
         'File type',
         max_length=MAX_FILENAME_CHARS,
-        choices=FileType.choices,
-        blank=False,
-        null=False
+        choices=FileType.choices
     )
     paths = models.ManyToManyField(
         Path,
@@ -161,3 +157,30 @@ class ContentRating(models.Model):
 
     def __str__(self):
         return Truncator(f'{self.user}\'s rating').chars(MAX_OBJECT_CHARS)
+
+
+class BotMessage(models.Model):
+    """Bot messages."""
+    key = models.CharField(
+        max_length=100,
+        unique=True,
+        verbose_name='message key'
+    )
+    text = models.TextField(verbose_name='message text')
+    comment = models.CharField(
+        max_length=255,
+        blank=True,
+        verbose_name='comment'
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name='Update time'
+    )
+
+    class Meta:
+        verbose_name = 'bot message'
+        verbose_name_plural = 'Bot messages'
+        ordering = ['key']
+
+    def __str__(self):
+        return self.key
