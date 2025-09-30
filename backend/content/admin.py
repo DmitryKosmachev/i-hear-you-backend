@@ -1,6 +1,13 @@
 from django.contrib import admin
 
-from content.models import Category, ContentFile, ContentRating, Topic, Path
+from content.models import (
+    BotMessage,
+    Category,
+    ContentFile,
+    ContentRating,
+    Topic,
+    Path
+)
 
 
 @admin.register(Path)
@@ -76,3 +83,9 @@ class ContentRatingAdmin(admin.ModelAdmin):
 
     def get_queryset(self, request):
         return super().get_queryset(request).select_related('content', 'user')
+
+
+@admin.register(BotMessage)
+class BotMessageAdmin(admin.ModelAdmin):
+    list_display = ['key', 'text', 'updated_at']
+    search_fields = ['key', 'text', 'comment']

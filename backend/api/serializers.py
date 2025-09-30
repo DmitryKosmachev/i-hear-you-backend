@@ -3,7 +3,7 @@ from djoser.serializers import UserCreateSerializer as BaseUserCreateSerializer
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
-from content.models import Category, ContentFile, Path, Topic
+from content.models import BotMessage, Category, ContentFile, Path, Topic
 
 
 User = get_user_model()
@@ -73,3 +73,10 @@ class ContentFileSerializer(serializers.ModelSerializer):
     class Meta:
         model = ContentFile
         fields = '__all__'
+
+
+class BotMessageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = BotMessage
+        fields = ['id', 'key', 'text', 'comment', 'updated_at']
+        read_only_fields = ['id', 'key', 'updated_at']
