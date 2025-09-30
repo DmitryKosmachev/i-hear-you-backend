@@ -110,7 +110,7 @@ class ContentFile(models.Model):
     )
     categories = models.ManyToManyField(Category, verbose_name='Categories')
     topics = models.ManyToManyField(Topic, verbose_name='Topics')
-    is_active = models.BooleanField('Active', default=True)
+    is_active = models.BooleanField('Active', default=False)
     created_at = models.DateTimeField('Created', auto_now_add=True)
     objects = ContentFileQuerySet.as_manager()
 
