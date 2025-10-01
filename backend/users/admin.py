@@ -46,4 +46,10 @@ class StaffUserAdmin(UserAdmin):
 
 @admin.register(BotUser)
 class BotUserAdmin(admin.ModelAdmin):
-    list_display = ['telegram_id']
+    list_display = [
+        'telegram_id',
+        'username',
+        'last_active',
+        'is_active',
+        'created_at'
+    ]

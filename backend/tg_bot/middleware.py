@@ -1,7 +1,6 @@
-from asgiref.sync import sync_to_async
-
 from aiogram import BaseMiddleware
 from aiogram.types import Update
+from asgiref.sync import sync_to_async
 from django.utils import timezone
 
 from users.models import BotUser
