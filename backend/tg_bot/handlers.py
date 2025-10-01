@@ -322,15 +322,16 @@ async def search_callback_handler(
     bot: Bot
 ):
     """Handle search button click."""
-    await query.message.edit_text(
-        text="Введите запрос для поиска материала по названию:",
+    prompt_message = await query.message.edit_text(
+        text='Введите запрос для поиска материала по названию:',
         reply_markup=None
     )
     await state.set_state(SearchState.waiting_for_query)
     await state.update_data(
         level1=callback_data.level1,
         level2=callback_data.level2,
-        level3=callback_data.level3
+        level3=callback_data.level3,
+        prompt_message_id=prompt_message.message_id
     )
     await query.answer()
 
@@ -347,6 +348,13 @@ async def process_search_query(
     level1_choice = state_data.get('level1')
     level2_choice = state_data.get('level2')
     level3_choice = state_data.get('level3')
+    prompt_message_id = state_data.get('prompt_message_id')
+    if prompt_message_id:
+        await bot.delete_message(
+            chat_id=message.chat.id,
+            message_id=prompt_message_id
+        )
+    await message.delete()
     filters = {
         'is_active': True,
         'name__icontains': search_query
