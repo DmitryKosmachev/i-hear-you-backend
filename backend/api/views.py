@@ -39,3 +39,4 @@ class PathViewSet(viewsets.ModelViewSet):
 class BotMessageViewSet(viewsets.ModelViewSet):
     queryset = BotMessage.objects.all()
     serializer_class = BotMessageSerializer
+    http_method_names = ['get', 'put', 'patch', 'head', 'options']
