@@ -14,7 +14,7 @@ from django.core.paginator import Paginator
 
 import tg_bot.callbacks as cb
 import tg_bot.keyboards as kb
-from content.models import ContentFile
+from content.models import ContentFile, Topic
 
 
 router = Router()
@@ -311,7 +311,7 @@ async def back_to_content_list_handler(
         callback_data.level2,
         callback_data.level3
     )
-    await query.message.edit_text('Выберите контент:', reply_markup=markup)
+    await query.message.edit_text('Материалы:', reply_markup=markup)
 
 
 @router.callback_query(cb.SearchCallback.filter())
@@ -362,14 +362,49 @@ async def process_search_query(
     content_items = await sync_to_async(list)(
         ContentFile.objects.filter(**filters).distinct().values('name', 'id')
     )
+    has_topics = await sync_to_async(lambda: Topic.objects.filter(
+        is_active=True,
+        files__is_active=True,
+        files__paths__slug=level1_choice,
+        files__categories__slug=level2_choice
+    ).exists())() if level2_choice else False
+    builder = InlineKeyboardBuilder()
+    if level3_choice and level3_choice != 'all':
+        back_callback = cb.Level3Callback(
+            level1=level1_choice,
+            level2=level2_choice,
+            topic=level3_choice
+        )
+    elif level2_choice and not has_topics:
+        back_callback = cb.Level3Callback(
+            level1=level1_choice,
+            level2=level2_choice,
+            topic='all'
+        )
+    elif level2_choice:
+        back_callback = cb.Level2Callback(
+            level1=level1_choice,
+            category=level2_choice
+        )
+    else:
+        back_callback = cb.Level1Callback(choice=level1_choice)
     if not content_items:
+        builder.add(InlineKeyboardButton(
+            text='🔍 Повторить поиск',
+            callback_data=cb.SearchCallback(
+                level1=level1_choice,
+                level2=level2_choice,
+                level3=level3_choice
+            ).pack()
+        ))
+        builder.add(InlineKeyboardButton(
+            text='⬅️ Назад',
+            callback_data=back_callback.pack()
+        ))
+        builder.adjust(1)
         await message.answer(
             text='Материалы не найдены. Попробуйте другой запрос.',
-            reply_markup=await kb.get_content_menu(
-                level1_choice,
-                level2_choice or 'all',
-                level3_choice or 'all'
-            )
+            reply_markup=builder.as_markup()
         )
         await state.clear()
         return
@@ -416,13 +451,14 @@ async def process_search_query(
                 ).pack()
             ))
         builder.row(*pagination_row)
-    back_callback = (
-        cb.BackLevel2Callback(level1=level1_choice)
-        if level3_choice == 'all'
-        else cb.BackLevel3Callback(level1=level1_choice, level2=level2_choice)
-        if level2_choice
-        else cb.BackLevel1Callback()
-    )
+    builder.row(InlineKeyboardButton(
+        text='🔍 Повторить поиск',
+        callback_data=cb.SearchCallback(
+            level1=level1_choice,
+            level2=level2_choice,
+            level3=level3_choice
+        ).pack()
+    ))
     builder.row(InlineKeyboardButton(
         text='⬅️ Назад',
         callback_data=back_callback.pack()
