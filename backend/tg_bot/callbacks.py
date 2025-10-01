@@ -89,3 +89,9 @@ class ContentMediaCallback(CallbackData, prefix='content_media'):
     level2: str
     level3: str
     content_item: int
+
+
+class SearchCallback(CallbackData, prefix='search'):
+    level1: str
+    level2: str | None
+    level3: str | None

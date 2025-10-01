@@ -1,9 +1,20 @@
 from aiogram import Bot, Router
 from aiogram.filters import CommandStart
-from aiogram.types import CallbackQuery, FSInputFile, Message
+from aiogram.fsm.context import FSMContext
+from aiogram.fsm.state import State, StatesGroup
+from aiogram.types import (
+    CallbackQuery,
+    FSInputFile,
+    InlineKeyboardButton,
+    Message
+)
+from aiogram.utils.keyboard import InlineKeyboardBuilder
+from asgiref.sync import sync_to_async
+from django.core.paginator import Paginator
 
-import tg_bot.keyboards as kb
 import tg_bot.callbacks as cb
+import tg_bot.keyboards as kb
+from content.models import ContentFile
 
 
 router = Router()
@@ -17,6 +28,10 @@ LEVEL_TEXTS = {
     'level3': 'Выберите тему или нажмите "Показать все", '
     'чтобы показать все материалы в категории:'
 }
+
+
+class SearchState(StatesGroup):
+    waiting_for_query = State()
 
 
 async def send_media_file(
@@ -297,3 +312,115 @@ async def back_to_content_list_handler(
         callback_data.level3
     )
     await query.message.edit_text('Выберите контент:', reply_markup=markup)
+
+
+@router.callback_query(cb.SearchCallback.filter())
+async def search_callback_handler(
+    query: CallbackQuery,
+    callback_data: cb.SearchCallback,
+    state: FSMContext,
+    bot: Bot
+):
+    """Handle search button click."""
+    await query.message.edit_text(
+        text="Введите запрос для поиска материала по названию:",
+        reply_markup=None
+    )
+    await state.set_state(SearchState.waiting_for_query)
+    await state.update_data(
+        level1=callback_data.level1,
+        level2=callback_data.level2,
+        level3=callback_data.level3
+    )
+    await query.answer()
+
+
+@router.message(SearchState.waiting_for_query)
+async def process_search_query(
+    message: Message,
+    state: FSMContext,
+    bot: Bot
+):
+    """Process search query and display results."""
+    search_query = message.text.strip()
+    state_data = await state.get_data()
+    level1_choice = state_data.get('level1')
+    level2_choice = state_data.get('level2')
+    level3_choice = state_data.get('level3')
+    filters = {
+        'is_active': True,
+        'name__icontains': search_query
+    }
+    content_items = await sync_to_async(list)(
+        ContentFile.objects.filter(**filters).distinct().values('name', 'id')
+    )
+    if not content_items:
+        await message.answer(
+            text='Материалы не найдены. Попробуйте другой запрос.',
+            reply_markup=await kb.get_content_menu(
+                level1_choice,
+                level2_choice or 'all',
+                level3_choice or 'all'
+            )
+        )
+        await state.clear()
+        return
+    paginator = Paginator(content_items, kb.ITEMS_PER_PAGE)
+    current_page = paginator.get_page(1)
+    builder = InlineKeyboardBuilder()
+    for item in current_page.object_list:
+        builder.add(
+            InlineKeyboardButton(
+                text=item['name'],
+                callback_data=cb.ContentDescriptionCallback(
+                    level1=level1_choice,
+                    level2=level2_choice or 'all',
+                    level3=level3_choice or 'all',
+                    content_item=item['id']
+                ).pack()
+            )
+        )
+    builder.adjust(1)
+    if paginator.num_pages > 1:
+        pagination_row = []
+        if current_page.has_previous():
+            pagination_row.append(InlineKeyboardButton(
+                text="◀️",
+                callback_data=cb.PaginateContentCallback(
+                    level1=level1_choice,
+                    level2=level2_choice or 'all',
+                    level3=level3_choice or 'all',
+                    page=current_page.previous_page_number()
+                ).pack()
+            ))
+        pagination_row.append(InlineKeyboardButton(
+            text=f'{current_page.number}/{paginator.num_pages}',
+            callback_data='no_action'
+        ))
+        if current_page.has_next():
+            pagination_row.append(InlineKeyboardButton(
+                text="▶️",
+                callback_data=cb.PaginateContentCallback(
+                    level1=level1_choice,
+                    level2=level2_choice or 'all',
+                    level3=level3_choice or 'all',
+                    page=current_page.next_page_number()
+                ).pack()
+            ))
+        builder.row(*pagination_row)
+    back_callback = (
+        cb.BackLevel2Callback(level1=level1_choice)
+        if level3_choice == 'all'
+        else cb.BackLevel3Callback(level1=level1_choice, level2=level2_choice)
+        if level2_choice
+        else cb.BackLevel1Callback()
+    )
+    builder.row(InlineKeyboardButton(
+        text='⬅️ Назад',
+        callback_data=back_callback.pack()
+    ))
+    await message.answer(
+        text=f'Результаты поиска для "{search_query}":',
+        reply_markup=builder.as_markup()
+    )
+    await state.clear()

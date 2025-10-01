@@ -43,8 +43,7 @@ class BotUser(models.Model):
     telegram_id = models.BigIntegerField('Telegram ID', unique=True)
     username = models.CharField('Username', blank=True, null=True)
     first_name = models.CharField('First name', blank=True, null=True)
-    last_active = models.DateTimeField('Last active', default=timezone.now
-    )
+    last_active = models.DateTimeField('Last active', default=timezone.now)
     is_active = models.BooleanField('Active', default=True)
     created_at = models.DateTimeField('Sign-up date', auto_now_add=True)
 
