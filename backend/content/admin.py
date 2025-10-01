@@ -5,6 +5,7 @@ from content.models import (
     Category,
     ContentFile,
     ContentRating,
+    ContentViewStat,
     Topic,
     Path
 )
@@ -89,3 +90,9 @@ class ContentRatingAdmin(admin.ModelAdmin):
 class BotMessageAdmin(admin.ModelAdmin):
     list_display = ['key', 'text', 'updated_at']
     search_fields = ['key', 'text', 'comment']
+
+
+@admin.register(ContentViewStat)
+class ContentViewStatAdmin(admin.ModelAdmin):
+    list_display = ['user', 'content_file', 'viewed_at']
+    search_fields = ['user', 'content_file', 'viewed_at']
