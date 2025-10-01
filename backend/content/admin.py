@@ -41,6 +41,7 @@ class ContentFileAdmin(admin.ModelAdmin):
         'name',
         'file_type',
         'rating',
+        'rating_count',
         'get_paths',
         'get_topics',
         'get_categories',
@@ -61,6 +62,10 @@ class ContentFileAdmin(admin.ModelAdmin):
 
     def rating(self, obj):
         return obj.rating
+
+    @admin.display(description='Users rated')
+    def rating_count(self, obj):
+        return obj.rating_count
 
     @admin.display(description='Paths')
     def get_paths(self, obj):
