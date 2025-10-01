@@ -87,7 +87,7 @@ async def get_level2_menu(
             cb.Level3Callback(
                 level1=level1_choice,
                 level2=cat['slug'],
-                topic="all"
+                topic='all'
             )
             if not has_topics
             else cb.Level2Callback(level1=level1_choice, category=cat['slug'])
@@ -128,7 +128,14 @@ async def get_level2_menu(
             ))
 
         builder.row(*pagination_row)
-
+    builder.row(InlineKeyboardButton(
+        text='🔍 Поиск',
+        callback_data=cb.SearchCallback(
+            level1=level1_choice,
+            level2=None,
+            level3=None
+        ).pack()
+    ))
     builder.row(InlineKeyboardButton(
         text='⬅️ Назад',
         callback_data=cb.BackLevel1Callback().pack()
@@ -207,7 +214,7 @@ async def get_level3_menu(
             callback_data=cb.Level3Callback(
                 level1=level1_choice,
                 level2=level2_choice,
-                topic="all"
+                topic='all'
             ).pack()
         )
     )
@@ -240,7 +247,14 @@ async def get_level3_menu(
                 ).pack()
             ))
         builder.row(*pagination_row)
-
+    builder.row(InlineKeyboardButton(
+        text='🔍 Поиск',
+        callback_data=cb.SearchCallback(
+            level1=level1_choice,
+            level2=level2_choice,
+            level3=None
+        ).pack()
+    ))
     builder.row(InlineKeyboardButton(
         text='⬅️ Назад',
         callback_data=cb.BackLevel2Callback(level1=level1_choice).pack()
@@ -263,7 +277,7 @@ def get_content_menu_data(
         'paths__slug': level1_choice,
         'categories__slug': level2_choice
     }
-    if level3_choice != "all":
+    if level3_choice != 'all':
         filters['topics__slug'] = level3_choice
     content_items = ContentFile.objects.filter(
         **filters
@@ -349,9 +363,17 @@ async def get_content_menu(
         builder.row(*pagination_row)
     back_callback = (
         cb.BackLevel2Callback(level1=level1_choice)
-        if level3_choice == "all"
+        if level3_choice == 'all'
         else cb.BackLevel3Callback(level1=level1_choice, level2=level2_choice)
     )
+    builder.row(InlineKeyboardButton(
+        text='🔍 Поиск',
+        callback_data=cb.SearchCallback(
+            level1=level1_choice,
+            level2=level2_choice,
+            level3=level3_choice
+        ).pack()
+    ))
     builder.row(
         InlineKeyboardButton(
             text='⬅️ Назад',
