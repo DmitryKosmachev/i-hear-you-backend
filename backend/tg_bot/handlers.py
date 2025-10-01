@@ -14,7 +14,7 @@ from django.core.paginator import Paginator
 
 import tg_bot.callbacks as cb
 import tg_bot.keyboards as kb
-from content.models import ContentFile
+from content.models import Category, ContentFile, Path, Topic
 
 
 router = Router()
@@ -108,7 +108,7 @@ async def handle_level1(
     """"Handler for Level 1 buttons. Representation for Level 2 buttons."""
     text = LEVEL_TEXTS['level2']
     await callback.message.edit_text(
-        text,
+        text=text,
         reply_markup=await kb.get_level2_menu(
             level1_choice=callback_data.choice
         )
@@ -122,8 +122,9 @@ async def handle_paginate_level2(
     callback_data: cb.PaginateLevel2Callback
 ):
     """Handler for Level 1 buttons. Pagination for Level 2 buttons."""
+    text = LEVEL_TEXTS['level2']
     await callback.message.edit_text(
-        text=LEVEL_TEXTS['level2'],
+        text=text,
         reply_markup=await kb.get_level2_menu(
             level1_choice=callback_data.level1,
             page=callback_data.page
@@ -140,7 +141,7 @@ async def handle_level2(
     """Handler for Level 2 buttons. Representation for Level 3 buttons."""
     text = LEVEL_TEXTS['level3']
     await callback.message.edit_text(
-        text,
+        text=text,
         reply_markup=await kb.get_level3_menu(
             level1_choice=callback_data.level1,
             level2_choice=callback_data.category)
@@ -154,8 +155,9 @@ async def handle_paginate_level3(
     callback_data: cb.PaginateLevel3Callback
 ):
     """Handler for Level 2 buttons. Pagination for Level 3 buttons."""
+    text = LEVEL_TEXTS['level3']
     await callback.message.edit_text(
-        text=LEVEL_TEXTS['level3'],
+        text=text,
         reply_markup=await kb.get_level3_menu(
             level1_choice=callback_data.level1,
             level2_choice=callback_data.level2,
@@ -171,8 +173,9 @@ async def handle_level3(
     callback_data: cb.Level3Callback
 ):
     """Handler for Level 3 buttons. Representation for the content list."""
+    text = 'материалы'
     await callback.message.edit_text(
-        text='Материалы:',
+        text=text,
         reply_markup=await kb.get_content_menu(
             level1_choice=callback_data.level1,
             level2_choice=callback_data.level2,
@@ -188,8 +191,9 @@ async def handle_paginate_content(
     callback_data: cb.PaginateContentCallback
 ):
     """Handler for Level 3 buttons. Pagination for content."""
+    text = 'материалы:'
     await callback.message.edit_text(
-        text='Материалы:',
+        text=text,
         reply_markup=await kb.get_content_menu(
             level1_choice=callback_data.level1,
             level2_choice=callback_data.level2,
