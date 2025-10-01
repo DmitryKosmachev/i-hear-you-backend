@@ -50,7 +50,7 @@ class ContentFileAdmin(admin.ModelAdmin):
     list_filter = ['is_active', 'file_type', 'paths', 'categories', 'topics']
     list_editable = ['is_active']
     search_fields = ['name']
-    filter_horizontal = ['categories', 'topics']
+    filter_horizontal = ['categories', 'paths', 'topics']
     ordering = ['name']
 
     def get_queryset(self, request):
