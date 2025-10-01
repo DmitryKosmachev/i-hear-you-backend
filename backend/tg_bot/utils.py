@@ -12,7 +12,7 @@ from tg_bot.constants import (
     INACTIVE_DAYS_FOR_MESSAGE,
     NOTIFICATION_PERIOD,
 )
-from content.models import BotMessage
+from tg_bot.models import BotMessage
 from users.models import BotUser
 
 

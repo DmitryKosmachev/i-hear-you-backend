@@ -9,7 +9,8 @@ from api.serializers import (
     TopicSerializer,
     PathSerializer
 )
-from content.models import BotMessage, Category, ContentFile, Topic, Path
+from content.models import Category, ContentFile, Topic, Path
+from tg_bot.models import BotMessage
 
 
 class CustomTokenObtainPairView(TokenObtainPairView):

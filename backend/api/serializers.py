@@ -3,7 +3,8 @@ from djoser.serializers import UserCreateSerializer as BaseUserCreateSerializer
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
-from content.models import BotMessage, Category, ContentFile, Path, Topic
+from content.models import Category, ContentFile, Path, Topic
+from tg_bot.models import BotMessage
 
 
 User = get_user_model()
