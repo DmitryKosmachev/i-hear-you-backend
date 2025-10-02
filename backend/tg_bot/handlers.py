@@ -35,16 +35,15 @@ from tg_bot.constants import (
 )
 from users.models import BotUser
 
-
 router = Router()
 
 
 async def send_media_file(
     query: CallbackQuery,
-    content_item_id: str,
-    level1: str,
-    level2: str,
-    level3: str,
+    content_item_id: int,
+    level1: int,
+    level2: int,
+    level3: int | None,
     bot: Bot
 ):
     """Display media and a Back button."""
@@ -97,7 +96,7 @@ async def send_media_file(
 
 @router.message(CommandStart())
 async def cmd_start(message: Message):
-    """Handler for the start command. Representaiton for Level 1 buttons."""
+    """Handler for the start command. Representation for Level 1 buttons."""
     await message.answer(
         LEVEL_TEXTS['level1'],
         reply_markup=await kb.get_level1_menu(),
@@ -111,7 +110,7 @@ async def handle_level1(
     callback: CallbackQuery,
     callback_data: cb.Level1Callback
 ):
-    """"Handler for Level 1 buttons. Representation for Level 2 buttons."""
+    """Handler for Level 1 buttons. Representation for Level 2 buttons."""
     text = LEVEL_TEXTS['level2']
     await callback.message.edit_text(
         text=text,
@@ -148,7 +147,7 @@ async def handle_level2(
 ):
     """Handler for Level 2 buttons. Representation for Level 3 buttons."""
     category = await sync_to_async(Category.objects.get)(
-            slug=callback_data.category
+        id=callback_data.category
     )
     text = LEVEL_TEXTS['level3'].format(category.name)
     await callback.message.edit_text(
@@ -169,7 +168,7 @@ async def handle_paginate_level3(
 ):
     """Handler for Level 2 buttons. Pagination for Level 3 buttons."""
     category = await sync_to_async(Category.objects.get)(
-            slug=callback_data.category
+        id=callback_data.level2
     )
     text = LEVEL_TEXTS['level3'].format(category.name)
     await callback.message.edit_text(
@@ -191,12 +190,12 @@ async def handle_level3(
 ):
     """Handler for Level 3 buttons. Representation for the content list."""
     category = await sync_to_async(Category.objects.get)(
-        slug=callback_data.level2
+        id=callback_data.level2
     )
     topic_name = ''
-    if callback_data.topic != 'all':
+    if callback_data.topic:
         topic = await sync_to_async(Topic.objects.get)(
-            slug=callback_data.topic
+            id=callback_data.topic
         )
         topic_name = TOPIC_NAME_FORMAT.format(topic.name)
     text = CONTENT_HEADER.format(category.name, topic_name)
@@ -219,12 +218,12 @@ async def handle_paginate_content(
 ):
     """Handler for Level 3 buttons. Pagination for content."""
     category = await sync_to_async(Category.objects.get)(
-        slug=callback_data.level2
+        id=callback_data.level2
     )
     topic_name = ''
-    if callback_data.level3 != 'all':
+    if callback_data.level3:
         topic = await sync_to_async(Topic.objects.get)(
-            slug=callback_data.level3
+            id=callback_data.level3
         )
         topic_name = TOPIC_NAME_FORMAT.format(topic.name)
     text = CONTENT_HEADER.format(category.name, topic_name)
@@ -272,7 +271,7 @@ async def handle_back_level3(
     callback_data: cb.BackLevel3Callback
 ):
     category = await sync_to_async(Category.objects.get)(
-            slug=callback_data.level2
+        id=callback_data.level2
     )
     text = LEVEL_TEXTS['level3'].format(category.name)
     await callback.message.edit_text(
@@ -355,12 +354,12 @@ async def back_to_content_list_handler(
 ):
     """Handler for the back-to-content-list button."""
     category = await sync_to_async(Category.objects.get)(
-        slug=callback_data.level2
+        id=callback_data.level2
     )
     topic_name = ''
-    if callback_data.level3 != 'all':
+    if callback_data.level3:
         topic = await sync_to_async(Topic.objects.get)(
-            slug=callback_data.level3
+            id=callback_data.level3
         )
         topic_name = TOPIC_NAME_FORMAT.format(topic.name)
     text = CONTENT_HEADER.format(category.name, topic_name)
@@ -431,11 +430,11 @@ async def process_search_query(
     has_topics = await sync_to_async(lambda: Topic.objects.filter(
         is_active=True,
         files__is_active=True,
-        files__paths__slug=level1_choice,
-        files__categories__slug=level2_choice
+        files__paths__id=level1_choice,
+        files__categories__id=level2_choice
     ).exists())() if level2_choice else False
     builder = InlineKeyboardBuilder()
-    if level3_choice and level3_choice != 'all':
+    if level3_choice:
         back_callback = cb.Level3Callback(
             level1=level1_choice,
             level2=level2_choice,
@@ -445,7 +444,7 @@ async def process_search_query(
         back_callback = cb.Level3Callback(
             level1=level1_choice,
             level2=level2_choice,
-            topic='all'
+            topic=0
         )
     elif level2_choice:
         back_callback = cb.Level2Callback(
@@ -484,8 +483,8 @@ async def process_search_query(
                 text=item['name'],
                 callback_data=cb.ContentDescriptionCallback(
                     level1=level1_choice,
-                    level2=level2_choice or 'all',
-                    level3=level3_choice or 'all',
+                    level2=level2_choice or 0,
+                    level3=level3_choice or 0,
                     content_item=item['id']
                 ).pack()
             )
@@ -498,8 +497,8 @@ async def process_search_query(
                 text=PREVIOUS_PAGE_BTN,
                 callback_data=cb.PaginateContentCallback(
                     level1=level1_choice,
-                    level2=level2_choice or 'all',
-                    level3=level3_choice or 'all',
+                    level2=level2_choice or 0,
+                    level3=level3_choice or 0,
                     page=current_page.previous_page_number()
                 ).pack()
             ))
@@ -512,8 +511,8 @@ async def process_search_query(
                 text=NEXT_PAGE_BTN,
                 callback_data=cb.PaginateContentCallback(
                     level1=level1_choice,
-                    level2=level2_choice or 'all',
-                    level3=level3_choice or 'all',
+                    level2=level2_choice or 0,
+                    level3=level3_choice or 0,
                     page=current_page.next_page_number()
                 ).pack()
             ))
@@ -606,7 +605,7 @@ async def submit_rating(
             callback_data.level1,
             callback_data.level2,
             callback_data.level3,
-            str(callback_data.content_id)
+            callback_data.content_id
         )
         await query.message.bot.edit_message_reply_markup(
             chat_id=query.message.chat.id,
@@ -620,7 +619,7 @@ async def submit_rating(
                 callback_data.level1,
                 callback_data.level2,
                 callback_data.level3,
-                str(callback_data.content_id),
+                callback_data.content_id,
                 state_data.get('page', 1)
             )
         else:
@@ -628,7 +627,7 @@ async def submit_rating(
                 callback_data.level1,
                 callback_data.level2,
                 callback_data.level3,
-                str(callback_data.content_id)
+                callback_data.content_id
             )
         await query.message.edit_text(
             text,

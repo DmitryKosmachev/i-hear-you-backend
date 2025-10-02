@@ -26,36 +26,32 @@ async def get_level1_menu():
     """Start menu (path). Load data from the database."""
     builder = InlineKeyboardBuilder()
     menu_items = await sync_to_async(list)(
-        Path.objects.all().values('name', 'slug')
+        Path.objects.all().values('name', 'id')
     )
-
     for item in menu_items:
         builder.add(
             InlineKeyboardButton(
                 text=item['name'],
-                callback_data=cb.Level1Callback(choice=item['slug']).pack()
+                callback_data=cb.Level1Callback(choice=item['id']).pack()
             )
         )
-
     builder.adjust(PATH_COLUMNS)
     return builder.as_markup()
 
 
 @sync_to_async
 def get_categories_page(
-    level1_choice: str,
+    level1_choice: int,
     page: int = 1,
     items_per_page: int = ITEMS_PER_PAGE
 ):
     """Get a page with categories."""
     categories = Category.objects.filter(
         is_active=True,
-        path__slug=level1_choice
-    ).distinct().values('name', 'slug')
-
+        path__id=level1_choice
+    ).distinct().values('name', 'id')
     paginator = Paginator(categories, items_per_page)
     current_page = paginator.get_page(page)
-
     return {
         'categories': list(current_page.object_list),
         'current_page': page,
@@ -77,7 +73,7 @@ def get_categories_page(
 
 
 async def get_level2_menu(
-    level1_choice: str,
+    level1_choice: int,
     page: int = 1,
     items_per_page: int = ITEMS_PER_PAGE
 ):
@@ -85,24 +81,23 @@ async def get_level2_menu(
     builder = InlineKeyboardBuilder()
     page_data = await get_categories_page(level1_choice, page, items_per_page)
     categories = page_data['categories']
-
     for cat in categories:
         has_topics = await sync_to_async(
             lambda: Topic.objects.filter(
                 is_active=True,
                 files__is_active=True,
-                files__paths__slug=level1_choice,
-                files__categories__slug=cat['slug']
+                files__paths__id=level1_choice,
+                files__categories__id=cat['id']
             ).exists()
         )()
         callback_data = (
             cb.Level3Callback(
                 level1=level1_choice,
-                level2=cat['slug'],
-                topic='all'
+                level2=cat['id'],
+                topic=0
             )
             if not has_topics
-            else cb.Level2Callback(level1=level1_choice, category=cat['slug'])
+            else cb.Level2Callback(level1=level1_choice, category=cat['id'])
         )
         builder.add(
             InlineKeyboardButton(
@@ -110,12 +105,9 @@ async def get_level2_menu(
                 callback_data=callback_data.pack()
             )
         )
-
     builder.adjust(DEFAULT_COLUMNS)
-
     if page_data['num_pages'] > 1:
         pagination_row = []
-
         if page_data['has_previous']:
             pagination_row.append(InlineKeyboardButton(
                 text=PREVIOUS_PAGE_BTN,
@@ -124,12 +116,10 @@ async def get_level2_menu(
                     page=page_data['previous_page_number']
                 ).pack()
             ))
-
         pagination_row.append(InlineKeyboardButton(
             text=f'{page_data["current_page"]}/{page_data["num_pages"]}',
             callback_data='no_action'
         ))
-
         if page_data['has_next']:
             pagination_row.append(InlineKeyboardButton(
                 text=NEXT_PAGE_BTN,
@@ -138,7 +128,6 @@ async def get_level2_menu(
                     page=page_data['next_page_number']
                 ).pack()
             ))
-
         builder.row(*pagination_row)
     builder.row(InlineKeyboardButton(
         text=SEARCH_BTN,
@@ -152,14 +141,13 @@ async def get_level2_menu(
         text=BACK_BTN,
         callback_data=cb.BackLevel1Callback().pack()
     ))
-
     return builder.as_markup()
 
 
 @sync_to_async
 def get_level3_menu_data(
-    level1_choice: str,
-    level2_choice: str,
+    level1_choice: int,
+    level2_choice: int,
     page: int = 1,
     items_per_page: int = ITEMS_PER_PAGE
 ):
@@ -167,12 +155,11 @@ def get_level3_menu_data(
     topics = Topic.objects.filter(
         is_active=True,
         files__is_active=True,
-        files__paths__slug=level1_choice,
-        files__categories__slug=level2_choice,
-        ).distinct().values('name', 'slug')
+        files__paths__id=level1_choice,
+        files__categories__id=level2_choice,
+    ).distinct().values('name', 'id')
     paginator = Paginator(topics, items_per_page)
     current_page = paginator.get_page(page)
-
     return {
         'topics': list(current_page.object_list),
         'current_page': page,
@@ -193,14 +180,13 @@ def get_level3_menu_data(
 
 
 async def get_level3_menu(
-    level1_choice: str,
-    level2_choice: str,
+    level1_choice: int,
+    level2_choice: int,
     page: int = 1,
     items_per_page: int = ITEMS_PER_PAGE
 ):
     """Level 3 menu. Topics."""
     builder = InlineKeyboardBuilder()
-
     page_data = await get_level3_menu_data(
         level1_choice,
         level2_choice,
@@ -208,7 +194,6 @@ async def get_level3_menu(
         items_per_page
     )
     topics = page_data['topics']
-
     for topic in topics:
         builder.add(
             InlineKeyboardButton(
@@ -216,7 +201,7 @@ async def get_level3_menu(
                 callback_data=cb.Level3Callback(
                     level1=level1_choice,
                     level2=level2_choice,
-                    topic=topic['slug']
+                    topic=topic['id']
                 ).pack()
             )
         )
@@ -226,12 +211,11 @@ async def get_level3_menu(
             callback_data=cb.Level3Callback(
                 level1=level1_choice,
                 level2=level2_choice,
-                topic='all'
+                topic=0
             ).pack()
         )
     )
     builder.adjust(DEFAULT_COLUMNS)
-
     if page_data['num_pages'] > 1:
         pagination_row = []
         if page_data['has_previous']:
@@ -243,12 +227,10 @@ async def get_level3_menu(
                     page=page_data['previous_page_number']
                 ).pack()
             ))
-
         pagination_row.append(InlineKeyboardButton(
             text=f"{page_data['current_page']}/{page_data['num_pages']}",
             callback_data='no_action'
         ))
-
         if page_data['has_next']:
             pagination_row.append(InlineKeyboardButton(
                 text=NEXT_PAGE_BTN,
@@ -271,26 +253,25 @@ async def get_level3_menu(
         text=BACK_BTN,
         callback_data=cb.BackLevel2Callback(level1=level1_choice).pack()
     ))
-
     return builder.as_markup()
 
 
 @sync_to_async
 def get_content_menu_data(
-    level1_choice: str,
-    level2_choice: str,
-    level3_choice: str,
+    level1_choice: int,
+    level2_choice: int,
+    level3_choice: int | None,
     page: int = 1,
     items_per_page: int = ITEMS_PER_PAGE
 ):
     """Get a list of content."""
     filters = {
         'is_active': True,
-        'paths__slug': level1_choice,
-        'categories__slug': level2_choice
+        'paths__id': level1_choice,
+        'categories__id': level2_choice
     }
-    if level3_choice != 'all':
-        filters['topics__slug'] = level3_choice
+    if level3_choice:
+        filters['topics__id'] = level3_choice
     content_items = ContentFile.objects.filter(
         **filters
     ).distinct().values('name', 'id')
@@ -316,9 +297,9 @@ def get_content_menu_data(
 
 
 async def get_content_menu(
-    level1_choice: str,
-    level2_choice: str,
-    level3_choice: str,
+    level1_choice: int,
+    level2_choice: int,
+    level3_choice: int | None,
     page: int = 1,
     items_per_page: int = ITEMS_PER_PAGE
 ):
@@ -339,13 +320,12 @@ async def get_content_menu(
                 callback_data=cb.ContentDescriptionCallback(
                     level1=level1_choice,
                     level2=level2_choice,
-                    level3=level3_choice,
+                    level3=level3_choice or 0,
                     content_item=item['id']
                 ).pack()
             )
         )
     builder.adjust(1)
-
     if page_data['num_pages'] > 1:
         pagination_row = []
         if page_data['has_previous']:
@@ -354,7 +334,7 @@ async def get_content_menu(
                 callback_data=cb.PaginateContentCallback(
                     level1=level1_choice,
                     level2=level2_choice,
-                    level3=level3_choice,
+                    level3=level3_choice or 0,
                     page=page_data['previous_page_number']
                 ).pack()
             ))
@@ -368,14 +348,14 @@ async def get_content_menu(
                 callback_data=cb.PaginateContentCallback(
                     level1=level1_choice,
                     level2=level2_choice,
-                    level3=level3_choice,
+                    level3=level3_choice or 0,
                     page=page_data['next_page_number']
                 ).pack()
             ))
         builder.row(*pagination_row)
     back_callback = (
         cb.BackLevel2Callback(level1=level1_choice)
-        if level3_choice == 'all'
+        if not level3_choice
         else cb.BackLevel3Callback(level1=level1_choice, level2=level2_choice)
     )
     builder.row(InlineKeyboardButton(
@@ -392,19 +372,17 @@ async def get_content_menu(
             callback_data=back_callback.pack()
         )
     )
-
     return builder.as_markup()
 
 
 @sync_to_async
-def get_content_item_data(content_item_id: str) -> dict:
+def get_content_item_data(content_item_id: int) -> dict:
     """Get content item data by ID."""
     try:
         content_item = ContentFile.objects.get(
             id=content_item_id,
             is_active=True
         )
-
         return {
             'title': content_item.name,
             'description': getattr(content_item, 'description'),
@@ -418,7 +396,7 @@ def get_content_item_data(content_item_id: str) -> dict:
 
 
 @sync_to_async
-def get_media_file_data(content_item_id: str) -> dict:
+def get_media_file_data(content_item_id: int) -> dict:
     """Get media file data."""
     try:
         content_item = ContentFile.objects.get(
@@ -441,7 +419,7 @@ def get_media_file_data(content_item_id: str) -> dict:
 
 @sync_to_async
 def get_content_page_data(
-    content_item_id: str,
+    content_item_id: int,
     page: int,
     chars_per_page: int = 4000
 ) -> dict:
@@ -451,23 +429,19 @@ def get_content_page_data(
             id=content_item_id,
             is_active=True
         )
-
         if not content_item.file or not content_item.file.name:
             return {
                 'content': 'Файл не найден',
                 'total_pages': 1,
                 'current_page': 1
             }
-
         file_path = content_item.file.path
-
         if not os.path.exists(file_path):
             return {
                 'content': 'Файл не найден на сервере',
                 'total_pages': 1,
                 'current_page': 1
             }
-
         try:
             with open(file_path, 'r', encoding='utf-8') as f:
                 content_text = f.read()
@@ -507,16 +481,14 @@ def get_content_page_data(
 
 
 async def get_content_description(
-    level1_choice: str,
-    level2_choice: str,
-    level3_choice: str,
-    content_item: str
+    level1_choice: int,
+    level2_choice: int,
+    level3_choice: int | None,
+    content_item: int
 ):
     """Get a page with content description, separating text and media."""
     content_data = await get_content_item_data(content_item)
-
     builder = InlineKeyboardBuilder()
-
     if content_data['content_type'] == 'TEXT':
         button_text = "📖 Читать"
         callback_data = cb.ContentReadCallback(
@@ -542,7 +514,6 @@ async def get_content_description(
             level3=level3_choice,
             content_item=content_item
         )
-
     builder.add(InlineKeyboardButton(
         text=button_text,
         callback_data=callback_data.pack()
@@ -566,22 +537,19 @@ async def get_content_description(
             level3=level3_choice
         ).pack()
     ))
-
     builder.adjust(1)
-
     description_text = (
         f'📚 <b>{content_data["title"]}</b>\n\n'
         f'{content_data["description"]}'
     )
-
     return description_text, builder.as_markup()
 
 
 async def get_content_page(
-    level1_choice: str,
-    level2_choice: str,
-    level3_choice: str,
-    content_item: str,
+    level1_choice: int,
+    level2_choice: int,
+    level3_choice: int | None,
+    content_item: int,
     page: int = 1
 ):
     """Get a content page."""
@@ -615,7 +583,6 @@ async def get_content_page(
                     page=page+1
                 ).pack()
             ))
-
         builder.row(*pagination_row)
     builder.row(
         InlineKeyboardButton(
@@ -642,15 +609,14 @@ async def get_content_page(
         f'<b>Страница {page}</b>\n\n'
         f'{page_data['content']}'
     )
-
     return content_text, builder.as_markup()
 
 
 async def get_media_back_keyboard(
-    level1_choice: str,
-    level2_choice: str,
-    level3_choice: str,
-    content_item: str
+    level1_choice: int,
+    level2_choice: int,
+    level3_choice: int | None,
+    content_item: int
 ):
     """Get a Back button for media files."""
     builder = InlineKeyboardBuilder()
