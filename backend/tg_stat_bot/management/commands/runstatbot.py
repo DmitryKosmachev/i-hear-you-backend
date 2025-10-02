@@ -1,13 +1,12 @@
 import asyncio
-import logging
 
 from aiogram import Bot, Dispatcher
 from django.core.management.base import BaseCommand
 from django.conf import settings
 
-from tg_bot.handlers import router
-from tg_bot.middleware import ContentStatMiddleware, UserActivityMiddleware
-from tg_bot.utils import start_reminders_scheduler
+from tg_stat_bot.handlers import router
+from tg_stat_bot.middleware import StatBotUserMiddleware
+from tg_stat_bot.utils import start_scheduler
 
 
 class Command(BaseCommand):
@@ -21,9 +20,8 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        logging.basicConfig(level=logging.INFO)
 
-        token = (options.get('token') or settings.TELEGRAM_BOT_TOKEN)
+        token = settings.TELEGRAM_ADMIN_BOT_TOKEN
 
         if not token:
             self.stderr.write(
@@ -51,10 +49,7 @@ class Command(BaseCommand):
         bot = Bot(token=token)
         dp = Dispatcher()
         dp.include_router(router)
-        dp.update.middleware(UserActivityMiddleware())
-        dp.callback_query.middleware(ContentStatMiddleware())
-        asyncio.create_task(start_reminders_scheduler(bot))
-
-        self.stdout.write(self.style.SUCCESS('✅ Bot started!'))
+        dp.update.middleware(StatBotUserMiddleware())
+        asyncio.create_task(start_scheduler(bot))
 
         await dp.start_polling(bot)

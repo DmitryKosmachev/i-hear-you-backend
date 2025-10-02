@@ -2,8 +2,9 @@ PATH_COLUMNS = 1
 MAX_CHARS_PER_COLUMN = 25
 DEFAULT_COLUMNS = 2
 ITEMS_PER_PAGE = 8
-INACTIVE_DAYS_FOR_MESSAGE = 0
+INACTIVE_DAYS_FOR_MESSAGE = 10
 NOTIFICATION_PERIOD = 86400
+NOTIFICATION_TIME = '12:00'
 DEFAULT_REMINDER_MESSAGE = (
     'Мы по вам скучаем! Загляните к нам, у нас много нового 😊'
 )

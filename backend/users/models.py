@@ -62,3 +62,23 @@ class BotUser(models.Model):
     def is_inactive(self, days=10):
         """Check if the user was inactive for more than N days."""
         return (timezone.now() - self.last_active).days >= days
+
+
+class StatBotUser(models.Model):
+    telegram_id = models.BigIntegerField('Telegram ID', unique=True)
+    username = models.CharField('Username', blank=True, null=True)
+    first_name = models.CharField('First name', blank=True, null=True)
+    is_active = models.BooleanField('Active', default=True)
+    created_at = models.DateTimeField('Sign-up date', auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'stat bot user'
+        verbose_name_plural = 'Stat bot users'
+
+    def __str__(self):
+        if self.username:
+            return f'@{self.username} ({self.telegram_id})'
+        elif self.first_name:
+            return f'{self.first_name} ({self.telegram_id})'
+        else:
+            return str(self.telegram_id)

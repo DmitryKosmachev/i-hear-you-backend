@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 
-from users.models import BotUser, StaffUser
+from users.models import BotUser, StaffUser, StatBotUser
 
 
 @admin.register(StaffUser)
@@ -50,6 +50,16 @@ class BotUserAdmin(admin.ModelAdmin):
         'telegram_id',
         'username',
         'last_active',
+        'is_active',
+        'created_at'
+    ]
+
+
+@admin.register(StatBotUser)
+class StatBotUserAdmin(admin.ModelAdmin):
+    list_display = [
+        'telegram_id',
+        'username',
         'is_active',
         'created_at'
     ]
