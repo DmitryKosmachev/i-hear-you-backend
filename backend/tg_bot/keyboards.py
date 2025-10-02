@@ -12,6 +12,7 @@ from tg_bot.constants import (
     DEFAULT_COLUMNS,
     ITEMS_PER_PAGE,
     NEXT_PAGE_BTN,
+    MAX_CHARS_PER_COLUMN,
     PATH_COLUMNS,
     PREVIOUS_PAGE_BTN,
     RATING_BTN,
@@ -81,6 +82,8 @@ async def get_level2_menu(
     builder = InlineKeyboardBuilder()
     page_data = await get_categories_page(level1_choice, page, items_per_page)
     categories = page_data['categories']
+    max_name_length = max((len(cat['name']) for cat in categories), default=0)
+    columns = 1 if max_name_length > MAX_CHARS_PER_COLUMN else DEFAULT_COLUMNS
     for cat in categories:
         has_topics = await sync_to_async(
             lambda: Topic.objects.filter(
@@ -105,7 +108,7 @@ async def get_level2_menu(
                 callback_data=callback_data.pack()
             )
         )
-    builder.adjust(DEFAULT_COLUMNS)
+    builder.adjust(columns)
     if page_data['num_pages'] > 1:
         pagination_row = []
         if page_data['has_previous']:
@@ -194,6 +197,8 @@ async def get_level3_menu(
         items_per_page
     )
     topics = page_data['topics']
+    max_name_length = max((len(topic['name']) for topic in topics), default=0)
+    columns = 1 if max_name_length > MAX_CHARS_PER_COLUMN else DEFAULT_COLUMNS
     for topic in topics:
         builder.add(
             InlineKeyboardButton(
@@ -215,7 +220,7 @@ async def get_level3_menu(
             ).pack()
         )
     )
-    builder.adjust(DEFAULT_COLUMNS)
+    builder.adjust(columns)
     if page_data['num_pages'] > 1:
         pagination_row = []
         if page_data['has_previous']:
