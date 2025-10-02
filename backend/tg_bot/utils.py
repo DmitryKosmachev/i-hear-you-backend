@@ -6,12 +6,13 @@ from asgiref.sync import sync_to_async
 from django.core.exceptions import ObjectDoesNotExist
 from django.utils import timezone
 
+from tg_bot import keyboards as kb
 from tg_bot.constants import (
     DEFAULT_REMINDER_MESSAGE,
     INACTIVE_DAYS_FOR_MESSAGE,
     NOTIFICATION_PERIOD,
 )
-from content.models import BotMessage
+from tg_bot.models import BotMessage
 from users.models import BotUser
 
 
@@ -42,7 +43,8 @@ async def send_reminders(bot: Bot):
                 if days_inactive % INACTIVE_DAYS_FOR_MESSAGE == 0:
                     await bot.send_message(
                         chat_id=user.telegram_id,
-                        text=message_text
+                        text=message_text,
+                        reply_markup=await kb.get_level1_menu()
                     )
             await asyncio.sleep(NOTIFICATION_PERIOD)
 

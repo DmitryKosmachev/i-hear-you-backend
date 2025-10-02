@@ -162,28 +162,40 @@ class ContentRating(models.Model):
         return Truncator(f'{self.user}\'s rating').chars(MAX_OBJECT_CHARS)
 
 
-class BotMessage(models.Model):
-    """Bot messages."""
-    key = models.CharField(
-        max_length=100,
-        unique=True,
-        verbose_name='message key'
+class ContentViewStat(models.Model):
+    """User viewing statistics."""
+
+    user = models.ForeignKey(
+        BotUser,
+        on_delete=models.CASCADE,
+        verbose_name='bot user',
+        related_name='content_views'
     )
-    text = models.TextField(verbose_name='message text')
-    comment = models.CharField(
-        max_length=255,
-        blank=True,
-        verbose_name='comment'
+    content_file = models.ForeignKey(
+        ContentFile,
+        on_delete=models.CASCADE,
+        verbose_name='file',
+        related_name='view_stats'
     )
-    updated_at = models.DateTimeField(
-        auto_now=True,
-        verbose_name='Update time'
+    viewed_at = models.DateTimeField(
+        'viewing time',
+        auto_now_add=True
     )
 
     class Meta:
-        verbose_name = 'bot message'
-        verbose_name_plural = 'Bot messages'
-        ordering = ['key']
+        verbose_name = 'viewing statistics'
+        verbose_name_plural = 'Viewing statistics'
+        ordering = ['-viewed_at']
+        indexes = [
+            models.Index(fields=['user', 'viewed_at']),
+            models.Index(fields=['content_file', 'viewed_at']),
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=['user', 'content_file', 'viewed_at'],
+                name='unique_user_content_view'
+            )
+        ]
 
     def __str__(self):
-        return self.key
+        return f'{self.user} - {self.content_file} - {self.viewed_at}'

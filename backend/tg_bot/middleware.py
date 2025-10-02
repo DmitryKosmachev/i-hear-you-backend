@@ -1,8 +1,10 @@
 from aiogram import BaseMiddleware
-from aiogram.types import Update
+from aiogram.types import CallbackQuery, Update
 from asgiref.sync import sync_to_async
 from django.utils import timezone
+from typing import Callable, Dict, Any, Awaitable
 
+from content.models import ContentFile, ContentViewStat
 from users.models import BotUser
 
 
@@ -43,3 +45,56 @@ class UserActivityMiddleware(BaseMiddleware):
 
         except Exception:
             return None
+
+
+class ContentStatMiddleware(BaseMiddleware):
+    """Middleware for content statistics."""
+
+    async def __call__(
+        self,
+        handler: Callable[[CallbackQuery, Dict[str, Any]], Awaitable[Any]],
+        event: CallbackQuery,
+        data: Dict[str, Any]
+    ) -> Any:
+        result = await handler(event, data)
+        await self.process_callback(event, data)
+        return result
+
+    async def process_callback(
+        self,
+        callback_query: CallbackQuery,
+        data: Dict[str, Any]
+    ):
+        try:
+            callback_data = data.get("callback_data")
+
+            if not callback_data:
+                return
+
+            callback_type = type(callback_data).__name__
+            target_callbacks = ['ContentReadCallback', 'ContentMediaCallback']
+
+            if callback_type in target_callbacks:
+                if hasattr(
+                    callback_data,
+                    'content_item'
+                ) and callback_data.content_item:
+                    await self.record_content_stat(
+                        callback_query.from_user,
+                        callback_data.content_item,
+                        callback_type
+                    )
+        except Exception as e:
+            print(f"Ошибка в ContentStatMiddleware: {e}")
+
+    @sync_to_async
+    def record_content_stat(self, tg_user, content_item_id, callback_type):
+        try:
+            user = BotUser.objects.get(telegram_id=tg_user.id)
+            content_file = ContentFile.objects.get(id=content_item_id)
+            ContentViewStat.objects.create(
+                user=user,
+                content_file=content_file,
+            )
+        except Exception as e:
+            print(f"Ошибка записи статистики: {e}")

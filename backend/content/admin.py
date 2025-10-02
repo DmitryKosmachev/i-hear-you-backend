@@ -1,10 +1,10 @@
 from django.contrib import admin
 
 from content.models import (
-    BotMessage,
     Category,
     ContentFile,
     ContentRating,
+    ContentViewStat,
     Topic,
     Path
 )
@@ -90,7 +90,7 @@ class ContentRatingAdmin(admin.ModelAdmin):
         return super().get_queryset(request).select_related('content', 'user')
 
 
-@admin.register(BotMessage)
-class BotMessageAdmin(admin.ModelAdmin):
-    list_display = ['key', 'text', 'updated_at']
-    search_fields = ['key', 'text', 'comment']
+@admin.register(ContentViewStat)
+class ContentViewStatAdmin(admin.ModelAdmin):
+    list_display = ['user', 'content_file', 'viewed_at']
+    search_fields = ['user', 'content_file', 'viewed_at']

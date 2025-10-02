@@ -6,7 +6,7 @@ from django.core.management.base import BaseCommand
 from django.conf import settings
 
 from tg_bot.handlers import router
-from tg_bot.middleware import UserActivityMiddleware
+from tg_bot.middleware import ContentStatMiddleware, UserActivityMiddleware
 from tg_bot.utils import send_reminders
 
 
@@ -52,6 +52,7 @@ class Command(BaseCommand):
         dp = Dispatcher()
         dp.include_router(router)
         dp.update.middleware(UserActivityMiddleware())
+        dp.callback_query.middleware(ContentStatMiddleware())
         asyncio.create_task(send_reminders(bot))
 
         self.stdout.write(self.style.SUCCESS('✅ Bot started!'))
