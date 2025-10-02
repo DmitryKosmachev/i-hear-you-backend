@@ -95,3 +95,21 @@ class SearchCallback(CallbackData, prefix='search'):
     level1: str
     level2: str | None
     level3: str | None
+
+
+class RateCallback(CallbackData, prefix="rate"):
+    """Start rating for a content item."""
+    content_id: int
+    level1: str
+    level2: str
+    level3: str
+    page: int = 1
+
+
+class RateSubmitCallback(CallbackData, prefix="rate_submit"):
+    """User selected a rating for a content item."""
+    content_id: int
+    rating: int
+    level1: str
+    level2: str
+    level3: str

@@ -72,8 +72,11 @@ class Topic(Section):
 
 class ContentFileQuerySet(models.query.QuerySet):
     def annotate_rating(self):
-        """Annotate content queryset with user rating."""
-        return self.annotate(rating=models.Avg('ratings__rating'))
+        """Annotate content queryset with AVG user rating and rating count."""
+        return self.annotate(
+            rating=models.Avg('ratings__rating'),
+            rating_count=models.Count('ratings')
+        )
 
 
 class ContentFile(models.Model):
