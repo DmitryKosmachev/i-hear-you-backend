@@ -80,6 +80,13 @@ class ContentStatMiddleware(BaseMiddleware):
                     callback_data,
                     'content_item'
                 ) and callback_data.content_item:
+                    if callback_type == 'ContentReadCallback':
+                        if hasattr(
+                            callback_data,
+                            'page'
+                        ) and callback_data.page != 1:
+                            return
+
                     await self.record_content_stat(
                         callback_query.from_user,
                         callback_data.content_item,
