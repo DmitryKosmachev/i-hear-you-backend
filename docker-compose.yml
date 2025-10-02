@@ -24,6 +24,12 @@ services:
       - static:/backend_static
       - media:/app/media
 
+  frontend:
+    container_name: ihear-frontend
+    build: ./frontend/
+    volumes:
+      - frontend_build:/app/dist
+
   gateway:
     container_name: ihear-nginx
     build: ./gateway/
@@ -34,9 +40,13 @@ services:
       - backend
     volumes:
       - ./gateway/nginx.conf:/etc/nginx/conf.d/default.conf
+      - frontend_build:/usr/share/nginx/html
       - static:/staticfiles/
       - media:/app/media
+
+
 volumes:
   pg_data:
   static:
   media:
+  frontend_build:
