@@ -3,6 +3,7 @@ from django.db import models
 
 class BotMessage(models.Model):
     """Bot messages."""
+
     key = models.CharField(
         max_length=100,
         unique=True,

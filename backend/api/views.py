@@ -6,8 +6,8 @@ from api.serializers import (
     CategorySerializer,
     ContentFileSerializer,
     CustomTokenObtainPairSerializer,
-    TopicSerializer,
-    PathSerializer
+    PathSerializer,
+    TopicSerializer
 )
 from content.models import Category, ContentFile, Topic, Path
 from tg_bot.models import BotMessage

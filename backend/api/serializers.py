@@ -11,7 +11,6 @@ User = get_user_model()
 
 
 class UserCreateSerializer(BaseUserCreateSerializer):
-
     class Meta(BaseUserCreateSerializer.Meta):
         model = User
         fields = [
@@ -27,7 +26,6 @@ class UserCreateSerializer(BaseUserCreateSerializer):
 
 
 class UserListSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = User
         fields = [
@@ -60,7 +58,6 @@ class TopicSerializer(serializers.ModelSerializer):
 
 
 class PathSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = Path
         fields = '__all__'
