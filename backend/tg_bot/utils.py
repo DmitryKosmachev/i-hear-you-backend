@@ -1,6 +1,6 @@
-import asyncio
-
 from datetime import timedelta
+
+import asyncio
 from aiogram import Bot
 from asgiref.sync import sync_to_async
 from django.core.exceptions import ObjectDoesNotExist

@@ -1,8 +1,9 @@
+from typing import Any, Awaitable, Callable, Dict
+
 from aiogram import BaseMiddleware
 from aiogram.types import CallbackQuery, Update
 from asgiref.sync import sync_to_async
 from django.utils import timezone
-from typing import Callable, Dict, Any, Awaitable
 
 from content.models import ContentFile, ContentViewStat
 from users.models import BotUser
