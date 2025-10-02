@@ -344,7 +344,7 @@ async def get_content_menu(
                 ).pack()
             ))
         pagination_row.append(InlineKeyboardButton(
-            text=f'{page_data["current_page"]}/{page_data["num_pages"]}',
+            text=f'{page_data['current_page']}/{page_data['num_pages']}',
             callback_data='no_action'
         ))
         if page_data['has_next']:
@@ -358,10 +358,18 @@ async def get_content_menu(
                 ).pack()
             ))
         builder.row(*pagination_row)
+    has_topics = await sync_to_async(
+        lambda: Topic.objects.filter(
+            is_active=True,
+            files__is_active=True,
+            files__paths__id=level1_choice,
+            files__categories__id=level2_choice
+        ).exists()
+    )()
     back_callback = (
-        cb.BackLevel2Callback(level1=level1_choice)
-        if not level3_choice
-        else cb.BackLevel3Callback(level1=level1_choice, level2=level2_choice)
+        cb.BackLevel3Callback(level1=level1_choice, level2=level2_choice)
+        if has_topics
+        else cb.BackLevel2Callback(level1=level1_choice)
     )
     builder.row(InlineKeyboardButton(
         text=SEARCH_BTN,
@@ -472,7 +480,7 @@ def get_content_page_data(
         }
     except ContentFile.DoesNotExist:
         return {
-            'content': "Материал не найден",
+            'content': 'Материал не найден',
             'total_pages': 1,
             'current_page': 1
         }
@@ -495,7 +503,7 @@ async def get_content_description(
     content_data = await get_content_item_data(content_item)
     builder = InlineKeyboardBuilder()
     if content_data['content_type'] == 'TEXT':
-        button_text = "📖 Читать"
+        button_text = '📖 Читать'
         callback_data = cb.ContentReadCallback(
             level1=level1_choice,
             level2=level2_choice,
@@ -544,7 +552,7 @@ async def get_content_description(
     ))
     builder.adjust(1)
     description_text = (
-        f'📚 <b>{content_data["title"]}</b>\n\n'
+        f'📚 <b>{content_data['title']}</b>\n\n'
         f'{content_data["description"]}'
     )
     return description_text, builder.as_markup()
@@ -574,7 +582,7 @@ async def get_content_page(
                 ).pack()
             ))
         pagination_row.append(InlineKeyboardButton(
-            text=f'{page}/{page_data["total_pages"]}',
+            text=f'{page}/{page_data['total_pages']}',
             callback_data='no_action'
         ))
         if page < page_data['total_pages']:
