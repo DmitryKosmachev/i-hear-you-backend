@@ -50,9 +50,9 @@ def get_categories_page(
     """Get a page with categories."""
     categories = Category.objects.filter(
         is_active=True,
-        files__is_active=True,
-        files__paths__slug=level1_choice
-        ).distinct().values('name', 'slug')
+        path__slug=level1_choice
+    ).distinct().values('name', 'slug')
+
     paginator = Paginator(categories, items_per_page)
     current_page = paginator.get_page(page)
 

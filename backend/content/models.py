@@ -40,7 +40,8 @@ class Section(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            self.slug = slugify(self.name)
+            base_slug = slugify(self.name)
+            self.slug = base_slug[:MAX_SLUG_CHARS]
         super().save(*args, **kwargs)
 
 
@@ -56,6 +57,12 @@ class Path(Section):
 
 class Category(Section):
     """Content category (articles, videos, books etc.)"""
+    path = models.ForeignKey(
+        Path,
+        on_delete=models.CASCADE,
+        related_name='categories',
+        null=True, blank=True
+    )
 
     class Meta:
         verbose_name = 'category'
