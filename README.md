@@ -3,9 +3,9 @@
 ## 👥 Команда
 Команда разработки проекта **I Hear You**.
 
-Сопенко Иван - https://github.com/ivansopenko (telegram - @geradesfeuer)
-Обросов Пётр - https://github.com/MrPyotr (telegram - @petjaobr)
-Космачев Дмитрий - https://github.com/DmitryKosmachev (telegram - @dr_kosma)
+- Сопенко Иван – [GitHub](https://github.com/ivansopenko) | [Telegram](https://t.me/geradesfeuer)  
+- Обросов Пётр – [GitHub](https://github.com/MrPyotr) | [Telegram](https://t.me/petjaobr)  
+- Космачев Дмитрий – [GitHub](https://github.com/DmitryKosmachev) | [Telegram](https://t.me/dr_kosma)
 
 ## 📖 Документация API
 Swagger-документация доступна по адресу:  

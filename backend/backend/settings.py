@@ -50,8 +50,8 @@ REST_FRAMEWORK = {
 }
 
 SPECTACULAR_SETTINGS = {
-    'TITLE': 'My API',
-    'DESCRIPTION': 'Документация API',
+    'TITLE': 'I hear you',
+    'DESCRIPTION': 'Документация к API проекта',
     'VERSION': '1.0.0',
     'SERVE_INCLUDE_SCHEMA': False,
 }
