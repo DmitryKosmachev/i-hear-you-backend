@@ -85,6 +85,8 @@ class BackToContentListCallback(CallbackData, prefix='bcl'):
 
 
 class ContentMediaCallback(CallbackData, prefix='cm'):
+    """Media content navigation."""
+
     level1: int
     level2: int
     level3: int
@@ -92,6 +94,8 @@ class ContentMediaCallback(CallbackData, prefix='cm'):
 
 
 class SearchCallback(CallbackData, prefix='search'):
+    """Search within content."""
+
     level1: int
     level2: int | None
     level3: int | None
@@ -99,6 +103,7 @@ class SearchCallback(CallbackData, prefix='search'):
 
 class RateCallback(CallbackData, prefix="rate"):
     """Start rating for a content item."""
+
     content_id: int
     level1: int
     level2: int
@@ -108,6 +113,7 @@ class RateCallback(CallbackData, prefix="rate"):
 
 class RateSubmitCallback(CallbackData, prefix="rsubmit"):
     """User selected a rating for a content item."""
+
     content_id: int
     rating: int
     level1: int

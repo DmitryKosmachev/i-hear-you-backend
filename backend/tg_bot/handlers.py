@@ -35,7 +35,43 @@ from tg_bot.constants import (
 )
 from users.models import BotUser
 
+
 router = Router()
+
+
+async def get_category(category_id: int) -> Category:
+    """Fetch a Category object by ID."""
+    return await sync_to_async(Category.objects.get)(id=category_id)
+
+
+async def get_topic_name(topic_id: int | None) -> str:
+    """Get formatted topic name or empty string if no topic."""
+    if topic_id:
+        topic = await sync_to_async(Topic.objects.get)(id=topic_id)
+        return TOPIC_NAME_FORMAT.format(topic.name)
+    return ''
+
+
+async def get_content_header(category_id: int, topic_id: int | None) -> str:
+    """Generate content menu header."""
+    category = await get_category(category_id)
+    topic_name = await get_topic_name(topic_id)
+    return CONTENT_HEADER.format(category.name, topic_name)
+
+
+async def edit_message(
+    callback: CallbackQuery,
+    text: str,
+    markup: InlineKeyboardBuilder | None = None,
+    parse_mode: str = 'HTML'
+):
+    """Edit message with text and optional markup."""
+    await callback.message.edit_text(
+        text=text,
+        reply_markup=markup if markup else None,
+        parse_mode=parse_mode
+    )
+    await callback.answer()
 
 
 async def send_media_file(
@@ -111,15 +147,11 @@ async def handle_level1(
     callback_data: cb.Level1Callback
 ):
     """Handler for Level 1 buttons. Representation for Level 2 buttons."""
-    text = LEVEL_TEXTS['level2']
-    await callback.message.edit_text(
-        text=text,
-        reply_markup=await kb.get_level2_menu(
-            level1_choice=callback_data.choice
-        ),
-        parse_mode='HTML'
+    await edit_message(
+        callback,
+        text=LEVEL_TEXTS['level2'],
+        markup=await kb.get_level2_menu(level1_choice=callback_data.choice)
     )
-    await callback.answer()
 
 
 @router.callback_query(cb.PaginateLevel2Callback.filter())
@@ -128,16 +160,14 @@ async def handle_paginate_level2(
     callback_data: cb.PaginateLevel2Callback
 ):
     """Handler for Level 1 buttons. Pagination for Level 2 buttons."""
-    text = LEVEL_TEXTS['level2']
-    await callback.message.edit_text(
-        text=text,
-        reply_markup=await kb.get_level2_menu(
+    await edit_message(
+        callback,
+        text=LEVEL_TEXTS['level2'],
+        markup=await kb.get_level2_menu(
             level1_choice=callback_data.level1,
             page=callback_data.page
-        ),
-        parse_mode='HTML'
+        )
     )
-    await callback.answer()
 
 
 @router.callback_query(cb.Level2Callback.filter())
@@ -146,19 +176,16 @@ async def handle_level2(
     callback_data: cb.Level2Callback
 ):
     """Handler for Level 2 buttons. Representation for Level 3 buttons."""
-    category = await sync_to_async(Category.objects.get)(
-        id=callback_data.category
-    )
+    category = await get_category(callback_data.category)
     text = LEVEL_TEXTS['level3'].format(category.name)
-    await callback.message.edit_text(
+    await edit_message(
+        callback,
         text=text,
-        reply_markup=await kb.get_level3_menu(
+        markup=await kb.get_level3_menu(
             level1_choice=callback_data.level1,
             level2_choice=callback_data.category
-        ),
-        parse_mode='HTML'
+        )
     )
-    await callback.answer()
 
 
 @router.callback_query(cb.PaginateLevel3Callback.filter())
@@ -167,20 +194,17 @@ async def handle_paginate_level3(
     callback_data: cb.PaginateLevel3Callback
 ):
     """Handler for Level 2 buttons. Pagination for Level 3 buttons."""
-    category = await sync_to_async(Category.objects.get)(
-        id=callback_data.level2
-    )
+    category = await get_category(callback_data.level2)
     text = LEVEL_TEXTS['level3'].format(category.name)
-    await callback.message.edit_text(
+    await edit_message(
+        callback,
         text=text,
-        reply_markup=await kb.get_level3_menu(
+        markup=await kb.get_level3_menu(
             level1_choice=callback_data.level1,
             level2_choice=callback_data.level2,
             page=callback_data.page
-        ),
-        parse_mode='HTML'
+        )
     )
-    await callback.answer()
 
 
 @router.callback_query(cb.Level3Callback.filter())
@@ -189,26 +213,16 @@ async def handle_level3(
     callback_data: cb.Level3Callback
 ):
     """Handler for Level 3 buttons. Representation for the content list."""
-    category = await sync_to_async(Category.objects.get)(
-        id=callback_data.level2
-    )
-    topic_name = ''
-    if callback_data.topic:
-        topic = await sync_to_async(Topic.objects.get)(
-            id=callback_data.topic
-        )
-        topic_name = TOPIC_NAME_FORMAT.format(topic.name)
-    text = CONTENT_HEADER.format(category.name, topic_name)
-    await callback.message.edit_text(
+    text = await get_content_header(callback_data.level2, callback_data.topic)
+    await edit_message(
+        callback,
         text=text,
-        reply_markup=await kb.get_content_menu(
+        markup=await kb.get_content_menu(
             level1_choice=callback_data.level1,
             level2_choice=callback_data.level2,
-            level3_choice=callback_data.topic,
-        ),
-        parse_mode='HTML'
+            level3_choice=callback_data.topic
+        )
     )
-    await callback.answer()
 
 
 @router.callback_query(cb.PaginateContentCallback.filter())
@@ -217,37 +231,26 @@ async def handle_paginate_content(
     callback_data: cb.PaginateContentCallback
 ):
     """Handler for Level 3 buttons. Pagination for content."""
-    category = await sync_to_async(Category.objects.get)(
-        id=callback_data.level2
-    )
-    topic_name = ''
-    if callback_data.level3:
-        topic = await sync_to_async(Topic.objects.get)(
-            id=callback_data.level3
-        )
-        topic_name = TOPIC_NAME_FORMAT.format(topic.name)
-    text = CONTENT_HEADER.format(category.name, topic_name)
-    await callback.message.edit_text(
+    text = await get_content_header(callback_data.level2, callback_data.level3)
+    await edit_message(
+        callback,
         text=text,
-        reply_markup=await kb.get_content_menu(
+        markup=await kb.get_content_menu(
             level1_choice=callback_data.level1,
             level2_choice=callback_data.level2,
             level3_choice=callback_data.level3,
             page=callback_data.page
-        ),
-        parse_mode='HTML'
+        )
     )
-    await callback.answer()
 
 
 @router.callback_query(cb.BackLevel1Callback.filter())
 async def handle_back_level1(callback: CallbackQuery):
-    await callback.message.edit_text(
+    await edit_message(
+        callback,
         text=LEVEL_TEXTS['level1'],
-        reply_markup=await kb.get_level1_menu(),
-        parse_mode='HTML'
+        markup=await kb.get_level1_menu()
     )
-    await callback.answer()
 
 
 @router.callback_query(cb.BackLevel2Callback.filter())
@@ -255,14 +258,11 @@ async def handle_back_level2(
     callback: CallbackQuery,
     callback_data: cb.BackLevel2Callback
 ):
-    await callback.message.edit_text(
+    await edit_message(
+        callback,
         text=LEVEL_TEXTS['level2'],
-        reply_markup=await kb.get_level2_menu(
-            level1_choice=callback_data.level1
-        ),
-        parse_mode='HTML'
+        markup=await kb.get_level2_menu(level1_choice=callback_data.level1)
     )
-    await callback.answer()
 
 
 @router.callback_query(cb.BackLevel3Callback.filter())
@@ -270,19 +270,16 @@ async def handle_back_level3(
     callback: CallbackQuery,
     callback_data: cb.BackLevel3Callback
 ):
-    category = await sync_to_async(Category.objects.get)(
-        id=callback_data.level2
-    )
+    category = await get_category(callback_data.level2)
     text = LEVEL_TEXTS['level3'].format(category.name)
-    await callback.message.edit_text(
+    await edit_message(
+        callback,
         text=text,
-        reply_markup=await kb.get_level3_menu(
+        markup=await kb.get_level3_menu(
             level1_choice=callback_data.level1,
             level2_choice=callback_data.level2
-        ),
-        parse_mode='HTML'
+        )
     )
-    await callback.answer()
 
 
 @router.callback_query(cb.ContentDescriptionCallback.filter())
@@ -298,11 +295,7 @@ async def content_description_handler(
         callback_data.content_item
     )
     try:
-        await query.message.edit_text(
-            text,
-            reply_markup=markup,
-            parse_mode='HTML'
-        )
+        await edit_message(query, text=text, markup=markup)
     except Exception:
         await query.message.delete()
         await query.message.answer(
@@ -324,7 +317,7 @@ async def content_read_handler(
         callback_data.content_item,
         callback_data.page
     )
-    await query.message.edit_text(text, reply_markup=markup, parse_mode='HTML')
+    await edit_message(query, text=text, markup=markup)
 
 
 @router.callback_query(cb.ContentMediaCallback.filter())
@@ -353,26 +346,13 @@ async def back_to_content_list_handler(
     callback_data: cb.BackToContentListCallback
 ):
     """Handler for the back-to-content-list button."""
-    category = await sync_to_async(Category.objects.get)(
-        id=callback_data.level2
-    )
-    topic_name = ''
-    if callback_data.level3:
-        topic = await sync_to_async(Topic.objects.get)(
-            id=callback_data.level3
-        )
-        topic_name = TOPIC_NAME_FORMAT.format(topic.name)
-    text = CONTENT_HEADER.format(category.name, topic_name)
+    text = await get_content_header(callback_data.level2, callback_data.level3)
     markup = await kb.get_content_menu(
         callback_data.level1,
         callback_data.level2,
         callback_data.level3
     )
-    await query.message.edit_text(
-        text,
-        reply_markup=markup,
-        parse_mode='HTML'
-    )
+    await edit_message(query, text=text, markup=markup)
 
 
 @router.callback_query(cb.SearchCallback.filter())
@@ -629,10 +609,6 @@ async def submit_rating(
                 callback_data.level3,
                 callback_data.content_id
             )
-        await query.message.edit_text(
-            text,
-            reply_markup=markup,
-            parse_mode='HTML'
-        )
+        await edit_message(query, text=text, markup=markup)
     await query.answer(RATING_REPLY_MSG)
     await state.clear()
