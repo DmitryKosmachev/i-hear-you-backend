@@ -1,4 +1,5 @@
 import os
+from datetime import timedelta
 from pathlib import Path
 
 from django.core.management.utils import get_random_secret_key
@@ -44,9 +45,6 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.SessionAuthentication',
         'rest_framework.authentication.BasicAuthentication',
     ),
-    # 'DEFAULT_PERMISSION_CLASSES': (
-    #     'rest_framework.permissions.IsAuthenticated',
-    # ),
 }
 
 SPECTACULAR_SETTINGS = {
@@ -63,6 +61,7 @@ DJOSER = {
         'user_create': 'api.serializers.UserCreateSerializer',
         'user': 'api.serializers.UserListSerializer',
         'current_user': 'api.serializers.UserListSerializer',
+        'token': 'api.serializers.CustomTokenObtainPairSerializer',
     },
     'PERMISSIONS': {
         'user_create': ['rest_framework.permissions.AllowAny'],
@@ -70,6 +69,11 @@ DJOSER = {
         'user': ['rest_framework.permissions.AllowAny'],
         'user_delete': ['rest_framework.permissions.AllowAny'],
     },
+}
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(hours=1),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
 }
 
 MIDDLEWARE = [

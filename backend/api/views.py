@@ -1,20 +1,14 @@
 from rest_framework import viewsets
-from rest_framework_simplejwt.views import TokenObtainPairView
 
 from api.serializers import (
     BotMessageSerializer,
     CategorySerializer,
     ContentFileSerializer,
-    CustomTokenObtainPairSerializer,
     PathSerializer,
     TopicSerializer
 )
 from content.models import Category, ContentFile, Topic, Path
 from tg_bot.models import BotMessage
-
-
-class CustomTokenObtainPairView(TokenObtainPairView):
-    serializer_class = CustomTokenObtainPairSerializer
 
 
 class CategoryViewSet(viewsets.ModelViewSet):
