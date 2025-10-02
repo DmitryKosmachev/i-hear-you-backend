@@ -27,37 +27,37 @@ class Level3Callback(BaseCallback, prefix='l3'):
     topic: str
 
 
-class PaginateLevel2Callback(BaseCallback, prefix='pag2'):
+class PaginateLevel2Callback(BaseCallback, prefix='pl2'):
     """Level 2 pagination."""
 
     page: int
 
 
-class PaginateLevel3Callback(BaseCallback, prefix='pag3'):
+class PaginateLevel3Callback(BaseCallback, prefix='pl3'):
     """Level 3 pagination."""
 
     page: int
 
 
-class PaginateContentCallback(BaseCallback, prefix='pag_content'):
+class PaginateContentCallback(BaseCallback, prefix='pc'):
     """Content pagination."""
 
     page: int
 
 
-class BackLevel1Callback(BaseCallback, prefix='back1'):
+class BackLevel1Callback(BaseCallback, prefix='bl1'):
     """Return to Level 1."""
 
 
-class BackLevel2Callback(BaseCallback, prefix='back2'):
+class BackLevel2Callback(BaseCallback, prefix='bl'):
     """Return to Level 2."""
 
 
-class BackLevel3Callback(BaseCallback, prefix='back3'):
+class BackLevel3Callback(BaseCallback, prefix='bl3'):
     """Return to Level 3."""
 
 
-class ContentDescriptionCallback(CallbackData, prefix='content_desc'):
+class ContentDescriptionCallback(CallbackData, prefix='cdesc'):
     """Content page with descriptions."""
 
     level1: str
@@ -66,7 +66,7 @@ class ContentDescriptionCallback(CallbackData, prefix='content_desc'):
     content_item: int
 
 
-class ContentReadCallback(CallbackData, prefix='content_read'):
+class ContentReadCallback(CallbackData, prefix='cread'):
     """Content representation."""
 
     level1: str
@@ -76,7 +76,7 @@ class ContentReadCallback(CallbackData, prefix='content_read'):
     page: int
 
 
-class BackToContentListCallback(CallbackData, prefix='back_content_list'):
+class BackToContentListCallback(CallbackData, prefix='bcl'):
     """Back to the list of content."""
 
     level1: str
@@ -84,7 +84,7 @@ class BackToContentListCallback(CallbackData, prefix='back_content_list'):
     level3: str
 
 
-class ContentMediaCallback(CallbackData, prefix='content_media'):
+class ContentMediaCallback(CallbackData, prefix='cm'):
     level1: str
     level2: str
     level3: str
@@ -106,7 +106,7 @@ class RateCallback(CallbackData, prefix="rate"):
     page: int = 1
 
 
-class RateSubmitCallback(CallbackData, prefix="rate_submit"):
+class RateSubmitCallback(CallbackData, prefix="rsubmit"):
     """User selected a rating for a content item."""
     content_id: int
     rating: int
