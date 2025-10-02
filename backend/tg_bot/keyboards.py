@@ -7,7 +7,19 @@ from django.core.paginator import Paginator
 
 import tg_bot.callbacks as cb
 from content.models import Category, ContentFile, Path, Topic
-from tg_bot.constants import DEFAULT_COLUMNS, ITEMS_PER_PAGE, PATH_COLUMNS
+from tg_bot.constants import (
+    BACK_BTN,
+    DEFAULT_COLUMNS,
+    ITEMS_PER_PAGE,
+    NEXT_PAGE_BTN,
+    PATH_COLUMNS,
+    PREVIOUS_PAGE_BTN,
+    RATING_BTN,
+    SEARCH_BTN,
+    SHOW_ALL_BTN,
+    TO_DESCRIPTION_BTN,
+    TO_LIST_BTN
+)
 
 
 async def get_level1_menu():
@@ -106,7 +118,7 @@ async def get_level2_menu(
 
         if page_data['has_previous']:
             pagination_row.append(InlineKeyboardButton(
-                text='◀️',
+                text=PREVIOUS_PAGE_BTN,
                 callback_data=cb.PaginateLevel2Callback(
                     level1=level1_choice,
                     page=page_data['previous_page_number']
@@ -120,7 +132,7 @@ async def get_level2_menu(
 
         if page_data['has_next']:
             pagination_row.append(InlineKeyboardButton(
-                text='▶️',
+                text=NEXT_PAGE_BTN,
                 callback_data=cb.PaginateLevel2Callback(
                     level1=level1_choice,
                     page=page_data['next_page_number']
@@ -129,7 +141,7 @@ async def get_level2_menu(
 
         builder.row(*pagination_row)
     builder.row(InlineKeyboardButton(
-        text='🔍 Поиск',
+        text=SEARCH_BTN,
         callback_data=cb.SearchCallback(
             level1=level1_choice,
             level2=None,
@@ -137,7 +149,7 @@ async def get_level2_menu(
         ).pack()
     ))
     builder.row(InlineKeyboardButton(
-        text='⬅️ Назад',
+        text=BACK_BTN,
         callback_data=cb.BackLevel1Callback().pack()
     ))
 
@@ -210,7 +222,7 @@ async def get_level3_menu(
         )
     builder.add(
         InlineKeyboardButton(
-            text="👀 Показать все",
+            text=SHOW_ALL_BTN,
             callback_data=cb.Level3Callback(
                 level1=level1_choice,
                 level2=level2_choice,
@@ -224,7 +236,7 @@ async def get_level3_menu(
         pagination_row = []
         if page_data['has_previous']:
             pagination_row.append(InlineKeyboardButton(
-                text="◀️",
+                text=PREVIOUS_PAGE_BTN,
                 callback_data=cb.PaginateLevel3Callback(
                     level1=level1_choice,
                     level2=level2_choice,
@@ -239,7 +251,7 @@ async def get_level3_menu(
 
         if page_data['has_next']:
             pagination_row.append(InlineKeyboardButton(
-                text='▶️',
+                text=NEXT_PAGE_BTN,
                 callback_data=cb.PaginateLevel3Callback(
                     level1=level1_choice,
                     level2=level2_choice,
@@ -248,7 +260,7 @@ async def get_level3_menu(
             ))
         builder.row(*pagination_row)
     builder.row(InlineKeyboardButton(
-        text='🔍 Поиск',
+        text=SEARCH_BTN,
         callback_data=cb.SearchCallback(
             level1=level1_choice,
             level2=level2_choice,
@@ -256,7 +268,7 @@ async def get_level3_menu(
         ).pack()
     ))
     builder.row(InlineKeyboardButton(
-        text='⬅️ Назад',
+        text=BACK_BTN,
         callback_data=cb.BackLevel2Callback(level1=level1_choice).pack()
     ))
 
@@ -338,7 +350,7 @@ async def get_content_menu(
         pagination_row = []
         if page_data['has_previous']:
             pagination_row.append(InlineKeyboardButton(
-                text="◀️",
+                text=PREVIOUS_PAGE_BTN,
                 callback_data=cb.PaginateContentCallback(
                     level1=level1_choice,
                     level2=level2_choice,
@@ -352,7 +364,7 @@ async def get_content_menu(
         ))
         if page_data['has_next']:
             pagination_row.append(InlineKeyboardButton(
-                text="▶️",
+                text=NEXT_PAGE_BTN,
                 callback_data=cb.PaginateContentCallback(
                     level1=level1_choice,
                     level2=level2_choice,
@@ -367,7 +379,7 @@ async def get_content_menu(
         else cb.BackLevel3Callback(level1=level1_choice, level2=level2_choice)
     )
     builder.row(InlineKeyboardButton(
-        text='🔍 Поиск',
+        text=SEARCH_BTN,
         callback_data=cb.SearchCallback(
             level1=level1_choice,
             level2=level2_choice,
@@ -376,7 +388,7 @@ async def get_content_menu(
     ))
     builder.row(
         InlineKeyboardButton(
-            text='⬅️ Назад',
+            text=BACK_BTN,
             callback_data=back_callback.pack()
         )
     )
@@ -535,9 +547,19 @@ async def get_content_description(
         text=button_text,
         callback_data=callback_data.pack()
     ))
-
+    builder.add(
+        InlineKeyboardButton(
+            text=RATING_BTN,
+            callback_data=cb.RateCallback(
+                content_id=content_item,
+                level1=level1_choice,
+                level2=level2_choice,
+                level3=level3_choice,
+            ).pack()
+        )
+    )
     builder.add(InlineKeyboardButton(
-        text='⬅️ Назад к списку',
+        text=TO_LIST_BTN,
         callback_data=cb.BackToContentListCallback(
             level1=level1_choice,
             level2=level2_choice,
@@ -569,7 +591,7 @@ async def get_content_page(
         pagination_row = []
         if page > 1:
             pagination_row.append(InlineKeyboardButton(
-                text='◀️ Предыдущая',
+                text=PREVIOUS_PAGE_BTN,
                 callback_data=cb.ContentReadCallback(
                     level1=level1_choice,
                     level2=level2_choice,
@@ -584,7 +606,7 @@ async def get_content_page(
         ))
         if page < page_data['total_pages']:
             pagination_row.append(InlineKeyboardButton(
-                text='Следующая ▶️',
+                text=NEXT_PAGE_BTN,
                 callback_data=cb.ContentReadCallback(
                     level1=level1_choice,
                     level2=level2_choice,
@@ -595,8 +617,20 @@ async def get_content_page(
             ))
 
         builder.row(*pagination_row)
+    builder.row(
+        InlineKeyboardButton(
+            text=RATING_BTN,
+            callback_data=cb.RateCallback(
+                level1=level1_choice,
+                level2=level2_choice,
+                level3=level3_choice,
+                content_id=content_item,
+                page=page
+            ).pack()
+        )
+    )
     builder.row(InlineKeyboardButton(
-        text='⬅️ Назад к описанию',
+        text=TO_DESCRIPTION_BTN,
         callback_data=cb.ContentDescriptionCallback(
             level1=level1_choice,
             level2=level2_choice,
@@ -620,8 +654,19 @@ async def get_media_back_keyboard(
 ):
     """Get a Back button for media files."""
     builder = InlineKeyboardBuilder()
+    builder.row(
+        InlineKeyboardButton(
+            text=RATING_BTN,
+            callback_data=cb.RateCallback(
+                content_id=content_item,
+                level1=level1_choice,
+                level2=level2_choice,
+                level3=level3_choice,
+            ).pack()
+        )
+    )
     builder.row(InlineKeyboardButton(
-        text='⬅️ Назад к описанию',
+        text=TO_DESCRIPTION_BTN,
         callback_data=cb.ContentDescriptionCallback(
             level1=level1_choice,
             level2=level2_choice,
