@@ -3,6 +3,7 @@ from djoser.serializers import UserCreateSerializer as BaseUserCreateSerializer
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
+from content.constants import MAX_FILE_SIZE_MB
 from content.models import Category, ContentFile, Path, Topic
 from tg_bot.models import BotMessage
 
@@ -64,13 +65,21 @@ class PathSerializer(serializers.ModelSerializer):
 
 
 class ContentFileSerializer(serializers.ModelSerializer):
-    categories = CategorySerializer(many=True, read_only=True)
-    topics = TopicSerializer(many=True, read_only=True)
-    paths = PathSerializer(many=True, read_only=True)
+    categories = CategorySerializer(many=True, required=False)
+    topics = TopicSerializer(many=True, required=False)
+    paths = PathSerializer(many=True, required=False)
+    file = serializers.FileField(required=True)
 
     class Meta:
         model = ContentFile
         fields = '__all__'
+
+    def validate_file(self, value):
+        if value.size > MAX_FILE_SIZE_MB * 1024 * 1024:
+            raise serializers.ValidationError(
+                f'File size exceeds the {MAX_FILE_SIZE_MB} MB limit.'
+            )
+        return value
 
 
 class BotMessageSerializer(serializers.ModelSerializer):
