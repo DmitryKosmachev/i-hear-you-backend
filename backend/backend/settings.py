@@ -16,6 +16,8 @@ DEBUG = os.getenv('DJANGO_DEBUG') == 'True'
 
 TELEGRAM_BOT_TOKEN = os.environ['TELEGRAM_BOT_TOKEN']
 
+TELEGRAM_ADMIN_BOT_TOKEN = os.getenv('TELEGRAM_ADMIN_BOT_TOKEN')
+
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost, 127.0.0.1').split(', ')
 
 CSRF_TRUSTED_ORIGINS = os.environ['CSRF_TRUSTED_ORIGINS'].split(',')
@@ -36,6 +38,7 @@ INSTALLED_APPS = [
     'content',
     'api',
     'tg_bot.apps.BotConfig',
+    'tg_stat_bot.apps.BotStatConfig',
 ]
 
 REST_FRAMEWORK = {
