@@ -1,3 +1,4 @@
+import asyncio
 from aiogram import Bot, Router
 from aiogram.filters import CommandStart
 from aiogram.fsm.context import FSMContext
@@ -563,7 +564,8 @@ async def start_rating(
 async def submit_rating(
     query: CallbackQuery,
     callback_data: cb.RateSubmitCallback,
-    state: FSMContext
+    state: FSMContext,
+    bot: Bot
 ):
     """Save the rating and return to the previous keyboard."""
     user = await sync_to_async(
@@ -573,6 +575,10 @@ async def submit_rating(
         content_id=callback_data.content_id,
         user=user,
         defaults={'rating': callback_data.rating}
+    )
+    rating_reply_msg = await query.message.answer(
+        RATING_REPLY_MSG,
+        parse_mode='HTML'
     )
     is_media = (
         query.message.video or
@@ -610,5 +616,9 @@ async def submit_rating(
                 callback_data.content_id
             )
         await edit_message(query, text=text, markup=markup)
-    await query.answer(RATING_REPLY_MSG)
+    await asyncio.sleep(5)
+    await bot.delete_message(
+        chat_id=query.message.chat.id,
+        message_id=rating_reply_msg.message_id
+    )
     await state.clear()
