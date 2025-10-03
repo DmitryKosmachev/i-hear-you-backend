@@ -28,7 +28,7 @@ services:
     container_name: ihear-frontend
     image: vpetruin/i-hear-you-admin-panel:latest
     volumes:
-      - frontend_build:/app/build/
+      - frontend_build:/app/dist
 
   gateway:
     container_name: ihear-nginx
