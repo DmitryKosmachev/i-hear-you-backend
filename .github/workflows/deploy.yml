@@ -45,6 +45,7 @@ jobs:
           key: ${{ secrets.SERVER_SSH_KEY }}
           script: |
             cd /home/user10/dev
-            docker compose -f docker-compose.production.yml pull
-            docker compose -f docker-compose.production.yml up -d
-            docker image prune -f
+            sudo docker compose -f docker-compose.production.yml pull
+            sudo docker compose -f docker-compose.production.yml down
+            sudo docker compose -f docker-compose.production.yml up -d
+            sudo docker image prune -f
