@@ -1,8 +1,8 @@
 import asyncio
 
 from aiogram import Bot, Dispatcher
-from django.core.management.base import BaseCommand
 from django.conf import settings
+from django.core.management.base import BaseCommand
 
 from tg_stat_bot.handlers import router
 from tg_stat_bot.middleware import StatBotUserMiddleware

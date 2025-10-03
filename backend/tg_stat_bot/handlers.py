@@ -4,6 +4,7 @@ from aiogram.types import Message
 
 from tg_stat_bot.constants import START_MESSAGE
 
+
 router = Router()
 
 

@@ -1,11 +1,11 @@
 from datetime import timedelta
 
 import asyncio
+import schedule
 from aiogram import Bot
 from asgiref.sync import sync_to_async
 from django.db.models import Count, Q
 from django.utils import timezone
-import schedule
 
 from content.models import ContentViewStat
 from tg_stat_bot.constants import STATS_MESSAGE_TIME, TOP_CONTENT_NUMBER

@@ -1,6 +1,6 @@
 from aiogram import BaseMiddleware
-from aiogram.types import Update
 from asgiref.sync import sync_to_async
+from aiogram.types import Update
 
 from users.models import StatBotUser
 
