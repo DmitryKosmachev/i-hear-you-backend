@@ -6,11 +6,13 @@ from api.views import (
     BotMessageViewSet,
     CategoryViewSet,
     ContentFileViewSet,
+    PathViewSet,
     TopicViewSet
 )
 
 
 router = DefaultRouter()
+router.register(r'path', PathViewSet)
 router.register(r'categories', CategoryViewSet)
 router.register(r'topics', TopicViewSet)
 router.register(r'files', ContentFileViewSet)
