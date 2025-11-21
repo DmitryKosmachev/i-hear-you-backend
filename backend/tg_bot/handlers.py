@@ -12,6 +12,7 @@ from aiogram.types import (
 )
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from asgiref.sync import sync_to_async
+from django.core.exceptions import ObjectDoesNotExist
 from django.core.paginator import Paginator
 
 import tg_bot.callbacks as cb
@@ -19,6 +20,7 @@ import tg_bot.keyboards as kb
 
 from content.constants import MIN_RATING_INT, MAX_RATING_INT
 from content.models import Category, ContentFile, ContentRating, Topic
+from tg_bot.models import BotMessage
 from tg_bot.constants import (
     BACK_BTN,
     CONTENT_HEADER,
@@ -39,6 +41,28 @@ from users.models import BotUser
 
 
 router = Router()
+
+
+async def aget_object_or_default(model, key, default_message):
+    try:
+        message = await model.objects.aget(
+            key=key
+        )
+        return message.text
+    except ObjectDoesNotExist:
+        return default_message
+
+
+async def aget_3level_or_default(model, key, category):
+    try:
+        message = await model.objects.aget(
+            key=key
+        )
+        return LEVEL_TEXTS['level3cat'].format(category) + message.text
+    except ObjectDoesNotExist:
+        return (
+            LEVEL_TEXTS['level3cat'].format(category) + LEVEL_TEXTS['level3']
+        )
 
 
 async def get_category(category_id: int) -> Category:
@@ -136,7 +160,9 @@ async def send_media_file(
 async def cmd_start(message: Message):
     """Handler for the start command. Representation for Level 1 buttons."""
     await message.answer(
-        LEVEL_TEXTS['level1'],
+        await aget_object_or_default(
+            BotMessage, 'level1', LEVEL_TEXTS['level1']
+        ),
         reply_markup=await kb.get_level1_menu(),
         parse_mode='HTML'
     )
@@ -151,7 +177,9 @@ async def handle_level1(
     """Handler for Level 1 buttons. Representation for Level 2 buttons."""
     await edit_message(
         callback,
-        text=LEVEL_TEXTS['level2'],
+        text=await aget_object_or_default(
+            BotMessage, 'level2', LEVEL_TEXTS['level2']
+        ),
         markup=await kb.get_level2_menu(level1_choice=callback_data.choice)
     )
 
@@ -164,7 +192,9 @@ async def handle_paginate_level2(
     """Handler for Level 1 buttons. Pagination for Level 2 buttons."""
     await edit_message(
         callback,
-        text=LEVEL_TEXTS['level2'],
+        text=await aget_object_or_default(
+            BotMessage, 'level2', LEVEL_TEXTS['level2']
+        ),
         markup=await kb.get_level2_menu(
             level1_choice=callback_data.level1,
             page=callback_data.page
@@ -179,7 +209,7 @@ async def handle_level2(
 ):
     """Handler for Level 2 buttons. Representation for Level 3 buttons."""
     category = await get_category(callback_data.category)
-    text = LEVEL_TEXTS['level3'].format(category.name)
+    text = await aget_3level_or_default(BotMessage, 'level3', category.name)
     await edit_message(
         callback,
         text=text,
@@ -197,7 +227,7 @@ async def handle_paginate_level3(
 ):
     """Handler for Level 2 buttons. Pagination for Level 3 buttons."""
     category = await get_category(callback_data.level2)
-    text = LEVEL_TEXTS['level3'].format(category.name)
+    text = await aget_3level_or_default(BotMessage, 'level3', category.name)
     await edit_message(
         callback,
         text=text,
@@ -250,7 +280,9 @@ async def handle_paginate_content(
 async def handle_back_level1(callback: CallbackQuery):
     await edit_message(
         callback,
-        text=LEVEL_TEXTS['level1'],
+        text=await aget_object_or_default(
+            BotMessage, 'level1', LEVEL_TEXTS['level1']
+        ),
         markup=await kb.get_level1_menu()
     )
 
@@ -262,7 +294,9 @@ async def handle_back_level2(
 ):
     await edit_message(
         callback,
-        text=LEVEL_TEXTS['level2'],
+        text=await aget_object_or_default(
+            BotMessage, 'level2', LEVEL_TEXTS['level2']
+        ),
         markup=await kb.get_level2_menu(level1_choice=callback_data.level1)
     )
 
@@ -273,7 +307,7 @@ async def handle_back_level3(
     callback_data: cb.BackLevel3Callback
 ):
     category = await get_category(callback_data.level2)
-    text = LEVEL_TEXTS['level3'].format(category.name)
+    text = await aget_3level_or_default(BotMessage, 'level3', category.name)
     await edit_message(
         callback,
         text=text,
