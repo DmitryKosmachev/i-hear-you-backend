@@ -1,4 +1,7 @@
 from rest_framework import viewsets
+from rest_framework.views import APIView
+from rest_framework.response import Response
+
 
 from api.serializers import (
     BotMessageSerializer,
@@ -7,8 +10,9 @@ from api.serializers import (
     PathSerializer,
     TopicSerializer
 )
-from content.models import Category, ContentFile, Topic, Path
+from content.models import Category, ContentFile, ContentRating, Topic, Path
 from tg_bot.models import BotMessage
+from tg_stat_bot.utils import get_all_metrics
 
 
 class CategoryViewSet(viewsets.ModelViewSet):
@@ -35,3 +39,9 @@ class BotMessageViewSet(viewsets.ModelViewSet):
     queryset = BotMessage.objects.all()
     serializer_class = BotMessageSerializer
     http_method_names = ['get', 'put', 'patch', 'head', 'options']
+
+
+class StatisticsAPIView(APIView):
+    def get(self, request):
+        stats = get_all_metrics()
+        return Response(stats)
