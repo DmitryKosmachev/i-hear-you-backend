@@ -7,7 +7,8 @@ from api.views import (
     CategoryViewSet,
     ContentFileViewSet,
     PathViewSet,
-    TopicViewSet
+    TopicViewSet,
+    StatisticsAPIView
 )
 
 
@@ -23,6 +24,7 @@ urlpatterns = [
     path('auth/', include('djoser.urls')),
     path('auth/', include('djoser.urls.jwt')),
     path('schema/', SpectacularAPIView.as_view(), name='schema'),
+    path('statistics/', StatisticsAPIView.as_view(), name='statistics'),
     path(
         'docs/',
         SpectacularSwaggerView.as_view(url_name='schema'),
