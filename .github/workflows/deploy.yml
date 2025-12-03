@@ -9,7 +9,12 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
+    env:
+      CI_TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      CI_TELEGRAM_ADMIN_BOT_TOKEN: ${{ secrets.TELEGRAM_ADMIN_BOT_TOKEN }}
+      CI_SECRET_KEY: ${{ secrets.SECRET_KEY }}
+      CI_ALLOWED_HOSTS: ${{ vars.ALLOWED_HOSTS }}
+      CI_CSRF_TRUSTED_ORIGINS: ${{ vars.CSRF_TRUSTED_ORIGINS }}
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
@@ -18,10 +23,10 @@ jobs:
         run: |
           pip3 install dump-env
           dump-env \
-            -t .env.example > .env
-#            -p 'CI_' \
-#            --strict CI_TELEGRAM_BOT_TOKEN \
-#            --strict CI_TELEGRAM_ADMIN_BOT_TOKEN > .env
+            -t .env.example \
+            -p 'CI_' \
+            --strict CI_TELEGRAM_BOT_TOKEN \
+            --strict CI_TELEGRAM_ADMIN_BOT_TOKEN > .env
 
       - name: Copy deploy files to server
         uses: appleboy/scp-action@v1
