@@ -9,6 +9,7 @@ services:
     volumes:
       - static:/staticfiles/
       - media:/app/media
+      - ~/frontend:/usr/share/nginx/html
 
 volumes:
   static:
