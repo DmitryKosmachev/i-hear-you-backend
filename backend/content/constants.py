@@ -6,6 +6,13 @@ MAX_FILE_SIZE_MB = 50
 
 MIN_RATING_INT = 1
 MAX_RATING_INT = 5
+EMOJI_FOR_RATING = {
+    1: "😞 1",
+    2: "🙁 2",
+    3: "😐 3",
+    4: "🙂 4",
+    5: "😍 5"
+}
 RATING_VALIDATION_ERROR = (
     f'Allowed rating: from {MIN_RATING_INT} to {MAX_RATING_INT}.'
 )

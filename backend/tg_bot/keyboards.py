@@ -511,6 +511,14 @@ async def get_content_description(
             content_item=content_item,
             page=1
         )
+    elif content_data['content_type'] == 'LINK':
+        button_text = 'Открыть ссылку'
+        callback_data = cb.ContentLinkCallback(
+            level1=level1_choice,
+            level2=level2_choice,
+            level3=level3_choice,
+            content_item=content_item,
+        )
     else:
         button_texts = {
             'IMAGE': '🖼️ Смотреть фото',

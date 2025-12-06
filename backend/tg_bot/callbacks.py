@@ -84,6 +84,15 @@ class BackToContentListCallback(CallbackData, prefix='bcl'):
     level3: int
 
 
+class ContentLinkCallback(CallbackData, prefix='clink'):
+    """Media content navigation."""
+
+    level1: int
+    level2: int
+    level3: int
+    content_item: int
+
+
 class ContentMediaCallback(CallbackData, prefix='cm'):
     """Media content navigation."""
 
