@@ -18,7 +18,7 @@ from django.core.paginator import Paginator
 import tg_bot.callbacks as cb
 import tg_bot.keyboards as kb
 
-from content.constants import MIN_RATING_INT, MAX_RATING_INT
+from content.constants import EMOJI_FOR_RATING, MIN_RATING_INT, MAX_RATING_INT
 from content.models import Category, ContentFile, ContentRating, Topic
 from tg_bot.models import BotMessage
 from tg_bot.constants import (
@@ -568,7 +568,7 @@ async def start_rating(
     for r in range(MIN_RATING_INT, MAX_RATING_INT + 1):
         builder.add(
             InlineKeyboardButton(
-                text=str(r),
+                text=EMOJI_FOR_RATING.get(r, str(r)),
                 callback_data=cb.RateSubmitCallback(
                     content_id=callback_data.content_id,
                     rating=r,
