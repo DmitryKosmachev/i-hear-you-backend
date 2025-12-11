@@ -10,7 +10,7 @@ from api.serializers import (
     PathSerializer,
     TopicSerializer
 )
-from content.models import Category, ContentFile, ContentRating, Topic, Path
+from content.models import Category, ContentFile, Topic, Path
 from tg_bot.models import BotMessage
 from tg_stat_bot.utils import get_all_metrics
 

@@ -356,6 +356,20 @@ async def content_read_handler(
     await edit_message(query, text=text, markup=markup)
 
 
+@router.callback_query(cb.ContentLinkCallback.filter())
+async def link_read_handler(
+    query: CallbackQuery,
+    callback_data: cb.ContentLinkCallback
+):
+    text, markup = await kb.get_link_content(
+        callback_data.level1,
+        callback_data.level2,
+        callback_data.level3,
+        callback_data.content_item
+    )
+    await edit_message(query, text=text, markup=markup)
+
+
 @router.callback_query(cb.ContentMediaCallback.filter())
 async def content_media_handler(
     query: CallbackQuery,

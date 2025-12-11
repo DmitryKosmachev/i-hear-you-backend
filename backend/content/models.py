@@ -1,3 +1,4 @@
+from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.utils.text import slugify, Truncator
@@ -96,9 +97,21 @@ class ContentFile(models.Model):
         VIDEO = 'VIDEO', 'Video'
         AUDIO = 'AUDIO', 'Audio'
         OTHER = 'OTHER', 'Other file type'
+        LINK = 'LINK', 'External link'
 
     name = models.CharField('Filename', max_length=MAX_NAME_CHARS)
-    file = models.FileField('File', upload_to='content/files/')
+    file = models.FileField(
+        'File',
+        upload_to='content/files/',
+        blank=True,
+        null=True
+    )
+    external_url = models.URLField(
+        'External URL',
+        max_length=500,
+        blank=True,
+        null=True
+    )
     description = models.TextField(
         'Description',
         max_length=MAX_DESCRIPTION_CHARS,
@@ -119,6 +132,16 @@ class ContentFile(models.Model):
     is_active = models.BooleanField('Active', default=False)
     created_at = models.DateTimeField('Created', auto_now_add=True)
     objects = ContentFileQuerySet.as_manager()
+
+    def clean(self):
+        if self.file_type == self.FileType.LINK and not self.external_url:
+            raise ValidationError(
+                {'external_url': 'Для типа LINK необходимо указать URL'}
+            )
+        elif self.file_type != self.FileType.LINK and not self.file:
+            raise ValidationError(
+                {'file': 'Для файловых типов необходимо загрузить файл'}
+            )
 
     class Meta:
         default_related_name = 'files'

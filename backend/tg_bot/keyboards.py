@@ -512,7 +512,7 @@ async def get_content_description(
             page=1
         )
     elif content_data['content_type'] == 'LINK':
-        button_text = 'Открыть ссылку'
+        button_text = '👀 Смотреть'
         callback_data = cb.ContentLinkCallback(
             level1=level1_choice,
             level2=level2_choice,
@@ -662,3 +662,55 @@ async def get_media_back_keyboard(
         ).pack()
     ))
     return builder.as_markup()
+
+
+async def get_link_data(link_item: int):
+    try:
+        content_file = await ContentFile.objects.aget(
+            id=link_item,
+            file_type=ContentFile.FileType.LINK,
+            is_active=True
+        )
+        return {
+            'url': content_file.external_url,
+            'title': content_file.name,
+            'description': content_file.description
+        }
+    except ContentFile.DoesNotExist:
+        return {
+            'url': '#',
+            'title': 'Ссылка не найдена',
+            'description': 'Запрашиваемая ссылка больше недоступна'
+        }
+
+
+async def get_link_content(
+    level1_choice: int,
+    level2_choice: int,
+    level3_choice: int | None,
+    link_item: int
+):
+    """Get a link content (no pagination)."""
+    link_data = await get_link_data(link_item)
+
+    builder = InlineKeyboardBuilder()
+
+    builder.row(InlineKeyboardButton(
+        text=TO_DESCRIPTION_BTN,
+        callback_data=cb.ContentDescriptionCallback(
+            level1=level1_choice,
+            level2=level2_choice,
+            level3=level3_choice,
+            content_item=link_item
+        ).pack()
+    ))
+
+    link_text = (
+        f'🔗 <a href="{link_data["url"]}">'
+        f'{link_data.get("title", "Смотреть")}</a>'
+    )
+
+    if link_data.get('description'):
+        link_text += f'\n\n{link_data["description"]}'
+
+    return link_text, builder.as_markup()
