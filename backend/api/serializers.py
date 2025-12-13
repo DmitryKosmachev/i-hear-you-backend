@@ -68,11 +68,31 @@ class ContentFileSerializer(serializers.ModelSerializer):
     categories = CategorySerializer(many=True, required=False)
     topics = TopicSerializer(many=True, required=False)
     paths = PathSerializer(many=True, required=False)
-    file = serializers.FileField(required=True)
+    file = serializers.FileField(required=False, allow_null=True)
+    external_url = serializers.URLField(required=False, allow_null=True)
 
     class Meta:
         model = ContentFile
         fields = '__all__'
+
+    def validate(self, data):
+        file_type = data.get('file_type')
+        file = data.get('file')
+        external_url = data.get('external_url')
+
+        if file_type == ContentFile.FileType.LINK:
+            if not external_url:
+                raise serializers.ValidationError(
+                    {'external_url': 'Для типа LINK необходимо указать URL'}
+                )
+            data['file'] = None
+        else:
+            if not file:
+                raise serializers.ValidationError(
+                    {'file': 'Для файловых типов необходимо загрузить файл'}
+                )
+            data['external_url'] = None
+        return data
 
     def validate_file(self, value):
         if value.size > MAX_FILE_SIZE_MB * 1024 * 1024:
