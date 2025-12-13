@@ -1,6 +1,7 @@
 from django.urls import path, include
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 from rest_framework.routers import DefaultRouter
+from rest_framework_simplejwt.views import TokenVerifyView
 
 from api.views import (
     BotMessageViewSet,
@@ -26,7 +27,7 @@ urlpatterns = [
     path('auth/', include('djoser.urls')),
     path('auth/jwt/create/', CookieTokenObtainPairView.as_view(), name='jwt-create'),
     path('auth/jwt/refresh/', CookieTokenRefreshView.as_view(), name='jwt-refresh'),
-    path('auth/jwt/', include('djoser.urls.jwt')),
+    path('auth/jwt/verify/', TokenVerifyView.as_view(), name='jwt-verify'),
     path('schema/', SpectacularAPIView.as_view(), name='schema'),
     path('statistics/', StatisticsAPIView.as_view(), name='statistics'),
     path(
