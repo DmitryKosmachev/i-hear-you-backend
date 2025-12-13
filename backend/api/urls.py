@@ -24,10 +24,10 @@ router.register(r'botmessages', BotMessageViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),
-    path('auth/', include('djoser.urls')),
     path('auth/jwt/create/', CookieTokenObtainPairView.as_view(), name='jwt-create'),
     path('auth/jwt/refresh/', CookieTokenRefreshView.as_view(), name='jwt-refresh'),
     path('auth/jwt/verify/', TokenVerifyView.as_view(), name='jwt-verify'),
+    path('auth/', include('djoser.urls')),
     path('schema/', SpectacularAPIView.as_view(), name='schema'),
     path('statistics/', StatisticsAPIView.as_view(), name='statistics'),
     path(
