@@ -20,4 +20,11 @@ db.sqlite3.bak
 .idea/
 *.vscode/
 
+# Documentation
+ANALYSIS.md
+AUTH_ANALYSIS.md
+REFRESH_TOKEN_COOKIE.md
+
+
+/frontend/
 docker-compose.production.yml

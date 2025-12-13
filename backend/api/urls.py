@@ -8,7 +8,9 @@ from api.views import (
     ContentFileViewSet,
     PathViewSet,
     TopicViewSet,
-    StatisticsAPIView
+    StatisticsAPIView,
+    CookieTokenObtainPairView,
+    CookieTokenRefreshView,
 )
 
 
@@ -22,7 +24,9 @@ router.register(r'botmessages', BotMessageViewSet)
 urlpatterns = [
     path('', include(router.urls)),
     path('auth/', include('djoser.urls')),
-    path('auth/', include('djoser.urls.jwt')),
+    path('auth/jwt/create/', CookieTokenObtainPairView.as_view(), name='jwt-create'),
+    path('auth/jwt/refresh/', CookieTokenRefreshView.as_view(), name='jwt-refresh'),
+    path('auth/jwt/', include('djoser.urls.jwt')),
     path('schema/', SpectacularAPIView.as_view(), name='schema'),
     path('statistics/', StatisticsAPIView.as_view(), name='statistics'),
     path(
