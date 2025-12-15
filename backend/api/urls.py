@@ -15,8 +15,18 @@ from api.views import (
 )
 
 
-router = DefaultRouter()
-router.register(r'path/', PathViewSet)
+class TrailingSlashRouter(DefaultRouter):
+    """
+    Кастомный роутер, который создает пути без слэша в конце.
+    Это предотвращает редирект 301, который превращает POST в GET.
+    """
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.trailing_slash = ''
+
+
+router = TrailingSlashRouter()
+router.register(r'path', PathViewSet)
 router.register(r'categories', CategoryViewSet)
 router.register(r'topics', TopicViewSet)
 router.register(r'files', ContentFileViewSet)
