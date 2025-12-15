@@ -16,7 +16,7 @@ from api.views import (
 
 
 router = DefaultRouter()
-router.register(r'path', PathViewSet)
+router.register(r'path/', PathViewSet)
 router.register(r'categories', CategoryViewSet)
 router.register(r'topics', TopicViewSet)
 router.register(r'files', ContentFileViewSet)
