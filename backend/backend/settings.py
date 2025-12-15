@@ -161,3 +161,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTH_USER_MODEL = 'users.StaffUser'
 
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+# Отключаем автоматическое добавление слэша для API endpoints
+# Это предотвращает редирект 301, который превращает POST в GET
+APPEND_SLASH = False
