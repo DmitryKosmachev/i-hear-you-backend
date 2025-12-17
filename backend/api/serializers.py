@@ -65,21 +65,42 @@ class PathSerializer(serializers.ModelSerializer):
 
 
 class ContentFileSerializer(serializers.ModelSerializer):
-    categories = serializers.PrimaryKeyRelatedField(
-        many=True,
-        queryset=Category.objects.all(),
-        required=False
+    categories = serializers.ListField(
+        child=serializers.CharField(),
+        required=False,
+        allow_empty=True
     )
-    topics = serializers.PrimaryKeyRelatedField(
-        many=True,
-        queryset=Topic.objects.all(),
-        required=False
+    topics = serializers.ListField(
+        child=serializers.CharField(),
+        required=False,
+        allow_empty=True
     )
-    paths = serializers.PrimaryKeyRelatedField(
-        many=True,
-        queryset=Path.objects.all(),
-        required=False
+    paths = serializers.ListField(
+        child=serializers.CharField(),
+        required=False,
+        allow_empty=True
     )
+    
+    def _convert_to_objects(self, data_list, model_class, field_name):
+        """Преобразует список строк (названий) в список объектов модели."""
+        if not data_list or data_list is None:
+            return []
+        
+        result = []
+        for item in data_list:
+            if not isinstance(item, str):
+                raise serializers.ValidationError(
+                    {field_name: f'Ожидалось название (строка), получен {type(item).__name__}'}
+                )
+            
+            try:
+                obj = model_class.objects.get(name=item)
+                result.append(obj)
+            except model_class.DoesNotExist:
+                raise serializers.ValidationError(
+                    {field_name: f'{model_class.__name__} "{item}" не найден'}
+                )
+        return result
     
     file = serializers.FileField(required=False, allow_null=True)
     external_url = serializers.URLField(required=False, allow_null=True)
@@ -117,9 +138,13 @@ class ContentFileSerializer(serializers.ModelSerializer):
         return value
 
     def create(self, validated_data):
-        categories = validated_data.pop('categories', [])
-        topics = validated_data.pop('topics', [])
-        paths = validated_data.pop('paths', [])
+        categories_data = validated_data.pop('categories', [])
+        topics_data = validated_data.pop('topics', [])
+        paths_data = validated_data.pop('paths', [])
+        
+        categories = self._convert_to_objects(categories_data, Category, 'categories')
+        topics = self._convert_to_objects(topics_data, Topic, 'topics')
+        paths = self._convert_to_objects(paths_data, Path, 'paths')
 
         content_file = ContentFile.objects.create(**validated_data)
 
@@ -133,23 +158,36 @@ class ContentFileSerializer(serializers.ModelSerializer):
         return content_file
 
     def update(self, instance, validated_data):
-
-        categories = validated_data.pop('categories', None)
-        topics = validated_data.pop('topics', None)
-        paths = validated_data.pop('paths', None)
+        categories_data = validated_data.pop('categories', None)
+        topics_data = validated_data.pop('topics', None)
+        paths_data = validated_data.pop('paths', None)
 
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         instance.save()
 
-        if categories is not None:
+        if categories_data is not None:
+            categories = self._convert_to_objects(categories_data, Category, 'categories')
             instance.categories.set(categories)
-        if topics is not None:
+        if topics_data is not None:
+            topics = self._convert_to_objects(topics_data, Topic, 'topics')
             instance.topics.set(topics)
-        if paths is not None:
+        if paths_data is not None:
+            paths = self._convert_to_objects(paths_data, Path, 'paths')
             instance.paths.set(paths)
 
         return instance
+    
+    def to_representation(self, instance):
+        """При чтении возвращаем ID вместо строк."""
+        representation = super().to_representation(instance)
+        if 'categories' in representation:
+            representation['categories'] = [cat.pk for cat in instance.categories.all()]
+        if 'topics' in representation:
+            representation['topics'] = [topic.pk for topic in instance.topics.all()]
+        if 'paths' in representation:
+            representation['paths'] = [path.pk for path in instance.paths.all()]
+        return representation
 
 
 class BotMessageSerializer(serializers.ModelSerializer):
