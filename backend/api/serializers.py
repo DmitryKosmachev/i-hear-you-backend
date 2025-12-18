@@ -107,7 +107,11 @@ class ContentFileSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ContentFile
-        fields = '__all__'
+
+        fields = [
+            'id', 'name', 'file', 'external_url', 'description', 
+            'file_type', 'is_active', 'created_at', 'rating', 'rating_count'
+        ]
 
     def validate(self, data):
         file_type = data.get('file_type')
@@ -179,14 +183,12 @@ class ContentFileSerializer(serializers.ModelSerializer):
         return instance
     
     def to_representation(self, instance):
-        """При чтении возвращаем ID вместо строк."""
+        """При чтении возвращаем названия для ManyToMany полей."""
         representation = super().to_representation(instance)
-        if 'categories' in representation:
-            representation['categories'] = [cat.pk for cat in instance.categories.all()]
-        if 'topics' in representation:
-            representation['topics'] = [topic.pk for topic in instance.topics.all()]
-        if 'paths' in representation:
-            representation['paths'] = [path.pk for path in instance.paths.all()]
+
+        representation['categories'] = [cat.name for cat in instance.categories.all()]
+        representation['topics'] = [topic.name for topic in instance.topics.all()]
+        representation['paths'] = [path.name for path in instance.paths.all()]
         return representation
 
 
