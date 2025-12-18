@@ -83,7 +83,10 @@ class ContentFileSerializer(serializers.ModelSerializer):
         allow_empty=True,
         write_only=True
     )
-    
+    # Поля для чтения аннотированного рейтинга
+    rating = serializers.FloatField(read_only=True)
+    rating_count = serializers.IntegerField(read_only=True)
+
     def _convert_to_objects(self, data_list, model_class, field_name):
         if not data_list or data_list is None:
             return []
