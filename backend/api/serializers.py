@@ -90,39 +90,77 @@ class ContentFileSerializer(serializers.ModelSerializer):
 
     def _convert_to_objects(self, data_list, model_class, field_name):
         """Преобразует список строк (названий) или объектов в список объектов модели."""
+        import json
+        
         if not data_list or data_list is None:
             return []
         
+        # Если пришла JSON-строка - парсим её
+        if isinstance(data_list, str):
+            try:
+                data_list = json.loads(data_list)
+            except json.JSONDecodeError:
+                # Если не JSON, считаем что это одно название
+                data_list = [data_list]
+        
         result = []
         for item in data_list:
-            # Если это строка - используем её как название
+            # Если это строка, которая выглядит как JSON - пробуем распарсить
             if isinstance(item, str):
-                search_value = item
-            # Если это словарь/объект - извлекаем name или id
-            elif isinstance(item, dict):
-                search_value = item.get('name') or item.get('id')
-                if not search_value:
-                    raise serializers.ValidationError(
-                        {field_name: f'Объект должен содержать поле "name" или "id"'}
-                    )
-            else:
-                raise serializers.ValidationError(
-                    {field_name: f'Ожидалось название (строка) или объект с полем "name"/"id", получен {type(item).__name__}'}
-                )
+                # Если строка начинается с [ или {, пробуем распарсить как JSON
+                if item.strip().startswith(('[', '{')):
+                    try:
+                        parsed = json.loads(item)
+                        # Если распарсили массив - обрабатываем элементы
+                        if isinstance(parsed, list):
+                            for parsed_item in parsed:
+                                obj = self._get_object_from_item(parsed_item, model_class, field_name)
+                                result.append(obj)
+                            continue
+                        # Если объект - обрабатываем его
+                        elif isinstance(parsed, dict):
+                            item = parsed
+                        # Иначе используем как есть
+                    except json.JSONDecodeError:
+                        pass  # Используем строку как название
             
-            try:
-                # Пробуем найти по ID (если search_value число или строка-число)
-                if isinstance(search_value, int) or (isinstance(search_value, str) and search_value.isdigit()):
-                    obj = model_class.objects.get(pk=int(search_value))
-                else:
-                    # Ищем по названию
-                    obj = model_class.objects.get(name=search_value)
-                result.append(obj)
-            except model_class.DoesNotExist:
-                raise serializers.ValidationError(
-                    {field_name: f'{model_class.__name__} "{search_value}" не найден'}
-                )
+            obj = self._get_object_from_item(item, model_class, field_name)
+            result.append(obj)
+        
         return result
+    
+    def _get_object_from_item(self, item, model_class, field_name):
+        """Получает объект модели из элемента (строка, число, словарь)."""
+        # Если это словарь/объект - извлекаем name или id
+        if isinstance(item, dict):
+            search_value = item.get('name') or item.get('id')
+            if not search_value:
+                raise serializers.ValidationError(
+                    {field_name: f'Объект должен содержать поле "name" или "id"'}
+                )
+        # Если это строка - используем её как название
+        elif isinstance(item, str):
+            search_value = item
+        # Если это число - используем как ID
+        elif isinstance(item, (int, float)):
+            search_value = int(item)
+        else:
+            raise serializers.ValidationError(
+                {field_name: f'Ожидалось название (строка), ID (число) или объект с полем "name"/"id", получен {type(item).__name__}'}
+            )
+        
+        try:
+            # Пробуем найти по ID (если search_value число или строка-число)
+            if isinstance(search_value, int) or (isinstance(search_value, str) and search_value.isdigit()):
+                obj = model_class.objects.get(pk=int(search_value))
+            else:
+                # Ищем по названию
+                obj = model_class.objects.get(name=search_value)
+            return obj
+        except model_class.DoesNotExist:
+            raise serializers.ValidationError(
+                {field_name: f'{model_class.__name__} "{search_value}" не найден'}
+            )
     
     file = serializers.FileField(required=False, allow_null=True)
     external_url = serializers.URLField(required=False, allow_null=True)
