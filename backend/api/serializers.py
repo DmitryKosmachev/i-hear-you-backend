@@ -68,21 +68,23 @@ class ContentFileSerializer(serializers.ModelSerializer):
     categories = serializers.ListField(
         child=serializers.CharField(),
         required=False,
-        allow_empty=True
+        allow_empty=True,
+        write_only=True
     )
     topics = serializers.ListField(
         child=serializers.CharField(),
         required=False,
-        allow_empty=True
+        allow_empty=True,
+        write_only=True
     )
     paths = serializers.ListField(
         child=serializers.CharField(),
         required=False,
-        allow_empty=True
+        allow_empty=True,
+        write_only=True
     )
     
     def _convert_to_objects(self, data_list, model_class, field_name):
-        """Преобразует список строк (названий) в список объектов модели."""
         if not data_list or data_list is None:
             return []
         
@@ -107,10 +109,10 @@ class ContentFileSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ContentFile
-
         fields = [
             'id', 'name', 'file', 'external_url', 'description', 
-            'file_type', 'is_active', 'created_at', 'rating', 'rating_count'
+            'file_type', 'is_active', 'created_at', 'rating', 'rating_count',
+            'categories', 'topics', 'paths'
         ]
 
     def validate(self, data):
@@ -165,7 +167,7 @@ class ContentFileSerializer(serializers.ModelSerializer):
         categories_data = validated_data.pop('categories', None)
         topics_data = validated_data.pop('topics', None)
         paths_data = validated_data.pop('paths', None)
-
+        
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         instance.save()
@@ -183,9 +185,7 @@ class ContentFileSerializer(serializers.ModelSerializer):
         return instance
     
     def to_representation(self, instance):
-        """При чтении возвращаем названия для ManyToMany полей."""
         representation = super().to_representation(instance)
-
         representation['categories'] = [cat.name for cat in instance.categories.all()]
         representation['topics'] = [topic.name for topic in instance.topics.all()]
         representation['paths'] = [path.name for path in instance.paths.all()]
