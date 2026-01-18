@@ -1,6 +1,6 @@
 import os
 
-from aiogram.types import InlineKeyboardButton
+from aiogram.types import InlineKeyboardButton, WebAppInfo
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from asgiref.sync import sync_to_async
 from django.core.paginator import Paginator
@@ -511,14 +511,28 @@ async def get_content_description(
             content_item=content_item,
             page=1
         )
+        builder.add(InlineKeyboardButton(
+            text=button_text,
+            callback_data=callback_data.pack()
+        ))
     elif content_data['content_type'] == 'LINK':
-        button_text = '👀 Смотреть'
-        callback_data = cb.ContentLinkCallback(
-            level1=level1_choice,
-            level2=level2_choice,
-            level3=level3_choice,
-            content_item=content_item,
-        )
+        link_data = await get_link_data(content_item)
+        target_url = link_data["url"]
+
+        if target_url.startswith('https://www.ihearyou.ru'):
+            builder.add(
+                InlineKeyboardButton(
+                    text="👀 Смотреть",
+                    web_app=WebAppInfo(url=target_url)
+                )
+            )
+        else:
+            builder.add(
+                InlineKeyboardButton(
+                    text="🌐 Открыть ссылку",
+                    url=target_url
+                )
+            )
     else:
         button_texts = {
             'IMAGE': '🖼️ Смотреть фото',
@@ -535,10 +549,10 @@ async def get_content_description(
             level3=level3_choice,
             content_item=content_item
         )
-    builder.add(InlineKeyboardButton(
-        text=button_text,
-        callback_data=callback_data.pack()
-    ))
+        builder.add(InlineKeyboardButton(
+            text=button_text,
+            callback_data=callback_data.pack()
+        ))
     builder.add(
         InlineKeyboardButton(
             text=RATING_BTN,
@@ -690,10 +704,30 @@ async def get_link_content(
     level3_choice: int | None,
     link_item: int
 ):
-    """Get a link content (no pagination)."""
+    """Get a link content with direct URL button."""
     link_data = await get_link_data(link_item)
 
     builder = InlineKeyboardBuilder()
+
+    builder.row(
+        InlineKeyboardButton(
+            text="🌐 Открыть ссылку",
+            url=link_data["url"]
+        )
+    )
+
+    builder.row(
+        InlineKeyboardButton(
+            text=RATING_BTN,
+            callback_data=cb.RateCallback(
+                level1=level1_choice,
+                level2=level2_choice,
+                level3=level3_choice,
+                content_id=link_item,
+                page=0
+            ).pack()
+        )
+    )
 
     builder.row(InlineKeyboardButton(
         text=TO_DESCRIPTION_BTN,
@@ -706,11 +740,8 @@ async def get_link_content(
     ))
 
     link_text = (
-        f'🔗 <a href="{link_data["url"]}">'
-        f'{link_data.get("title", "Смотреть")}</a>'
+        f'<b>{link_data.get("title", "Ссылка")}</b>\n\n'
+        f'{link_data.get("description", "")}'
     )
-
-    if link_data.get('description'):
-        link_text += f'\n\n{link_data["description"]}'
 
     return link_text, builder.as_markup()
