@@ -65,23 +65,23 @@ class PathSerializer(serializers.ModelSerializer):
 
 
 class ContentFileSerializer(serializers.ModelSerializer):
-    # Принимаем как строки (названия), так и объекты (с полем name или id)
-    categories = serializers.ListField(
-        child=serializers.JSONField(),
+    # Принимаем только ID (числа или строки-числа)
+    categories = serializers.PrimaryKeyRelatedField(
+        many=True,
+        queryset=Category.objects.all(),
         required=False,
-        allow_empty=True,
         write_only=True
     )
-    topics = serializers.ListField(
-        child=serializers.JSONField(),
+    topics = serializers.PrimaryKeyRelatedField(
+        many=True,
+        queryset=Topic.objects.all(),
         required=False,
-        allow_empty=True,
         write_only=True
     )
-    paths = serializers.ListField(
-        child=serializers.JSONField(),
+    paths = serializers.PrimaryKeyRelatedField(
+        many=True,
+        queryset=Path.objects.all(),
         required=False,
-        allow_empty=True,
         write_only=True
     )
 
@@ -117,84 +117,6 @@ class ContentFileSerializer(serializers.ModelSerializer):
         file_size = self.get_file_size(obj)
         return self._format_file_size(file_size)
 
-    def _convert_to_objects(self, data_list, model_class, field_name):
-        """Преобразует список строк (названий) или объектов в список объектов модели."""
-        import json
-        
-        if not data_list or data_list is None:
-            return []
-        
-        # Если пришла JSON-строка - парсим её
-        if isinstance(data_list, str):
-            try:
-                data_list = json.loads(data_list)
-            except json.JSONDecodeError:
-                # Если не JSON, считаем что это одно название
-                data_list = [data_list]
-        
-        result = []
-        for item in data_list:
-            # Если это строка, которая выглядит как JSON - пробуем распарсить
-            if isinstance(item, str):
-                # Если строка начинается с [ или {, пробуем распарсить как JSON
-                if item.strip().startswith(('[', '{')):
-                    try:
-                        parsed = json.loads(item)
-                        # Если распарсили массив - обрабатываем элементы
-                        if isinstance(parsed, list):
-                            for parsed_item in parsed:
-                                obj = self._get_object_from_item(parsed_item, model_class, field_name)
-                                result.append(obj)
-                            continue
-                        # Если объект - обрабатываем его
-                        elif isinstance(parsed, dict):
-                            item = parsed
-                        # Иначе используем как есть
-                    except json.JSONDecodeError:
-                        pass  # Используем строку как название
-            
-            obj = self._get_object_from_item(item, model_class, field_name)
-            result.append(obj)
-        
-        return result
-    
-    def _get_object_from_item(self, item, model_class, field_name):
-        """Получает объект модели из элемента (строка, число, словарь)."""
-        # Если это словарь/объект - извлекаем name или id
-        if isinstance(item, dict):
-            search_value = item.get('name') or item.get('id')
-            if not search_value:
-                raise serializers.ValidationError(
-                    {field_name: f'Объект должен содержать поле "name" или "id"'}
-                )
-        # Если это строка - проверяем, является ли она числом (ID)
-        elif isinstance(item, str):
-            # Если строка состоит только из цифр - это ID
-            if item.isdigit():
-                search_value = int(item)
-            else:
-                # Иначе это название
-                search_value = item
-        # Если это число - используем как ID
-        elif isinstance(item, (int, float)):
-            search_value = int(item)
-        else:
-            raise serializers.ValidationError(
-                {field_name: f'Ожидалось название (строка), ID (число) или объект с полем "name"/"id", получен {type(item).__name__}'}
-            )
-        
-        try:
-            # Пробуем найти по ID (если search_value число)
-            if isinstance(search_value, int):
-                obj = model_class.objects.get(pk=search_value)
-            else:
-                # Ищем по названию
-                obj = model_class.objects.get(name=search_value)
-            return obj
-        except model_class.DoesNotExist:
-            raise serializers.ValidationError(
-                {field_name: f'{model_class.__name__} "{search_value}" не найден'}
-            )
     
 
     def validate(self, data):
@@ -226,13 +148,10 @@ class ContentFileSerializer(serializers.ModelSerializer):
         return value
 
     def create(self, validated_data):
-        categories_data = validated_data.pop('categories', [])
-        topics_data = validated_data.pop('topics', [])
-        paths_data = validated_data.pop('paths', [])
-        
-        categories = self._convert_to_objects(categories_data, Category, 'categories')
-        topics = self._convert_to_objects(topics_data, Topic, 'topics')
-        paths = self._convert_to_objects(paths_data, Path, 'paths')
+        # PrimaryKeyRelatedField автоматически преобразует ID в объекты
+        categories = validated_data.pop('categories', [])
+        topics = validated_data.pop('topics', [])
+        paths = validated_data.pop('paths', [])
 
         content_file = ContentFile.objects.create(**validated_data)
 
@@ -246,22 +165,20 @@ class ContentFileSerializer(serializers.ModelSerializer):
         return content_file
 
     def update(self, instance, validated_data):
-        categories_data = validated_data.pop('categories', None)
-        topics_data = validated_data.pop('topics', None)
-        paths_data = validated_data.pop('paths', None)
-        
+        # PrimaryKeyRelatedField автоматически преобразует ID в объекты
+        categories = validated_data.pop('categories', None)
+        topics = validated_data.pop('topics', None)
+        paths = validated_data.pop('paths', None)
+
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         instance.save()
 
-        if categories_data is not None:
-            categories = self._convert_to_objects(categories_data, Category, 'categories')
+        if categories is not None:
             instance.categories.set(categories)
-        if topics_data is not None:
-            topics = self._convert_to_objects(topics_data, Topic, 'topics')
+        if topics is not None:
             instance.topics.set(topics)
-        if paths_data is not None:
-            paths = self._convert_to_objects(paths_data, Path, 'paths')
+        if paths is not None:
             instance.paths.set(paths)
 
         return instance
