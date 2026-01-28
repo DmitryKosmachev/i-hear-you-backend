@@ -167,9 +167,14 @@ class ContentFileSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError(
                     {field_name: f'Объект должен содержать поле "name" или "id"'}
                 )
-        # Если это строка - используем её как название
+        # Если это строка - проверяем, является ли она числом (ID)
         elif isinstance(item, str):
-            search_value = item
+            # Если строка состоит только из цифр - это ID
+            if item.isdigit():
+                search_value = int(item)
+            else:
+                # Иначе это название
+                search_value = item
         # Если это число - используем как ID
         elif isinstance(item, (int, float)):
             search_value = int(item)
@@ -179,9 +184,9 @@ class ContentFileSerializer(serializers.ModelSerializer):
             )
         
         try:
-            # Пробуем найти по ID (если search_value число или строка-число)
-            if isinstance(search_value, int) or (isinstance(search_value, str) and search_value.isdigit()):
-                obj = model_class.objects.get(pk=int(search_value))
+            # Пробуем найти по ID (если search_value число)
+            if isinstance(search_value, int):
+                obj = model_class.objects.get(pk=search_value)
             else:
                 # Ищем по названию
                 obj = model_class.objects.get(name=search_value)
