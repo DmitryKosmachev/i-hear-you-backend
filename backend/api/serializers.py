@@ -87,6 +87,10 @@ class ContentFileSerializer(serializers.ModelSerializer):
 
     rating = serializers.FloatField(read_only=True)
     rating_count = serializers.IntegerField(read_only=True)
+    
+    # Вычисляемые поля для размера файла
+    file_size = serializers.SerializerMethodField(read_only=True)
+    file_size_human = serializers.SerializerMethodField(read_only=True)
 
     file = serializers.FileField(required=False, allow_null=True)
     external_url = serializers.URLField(required=False, allow_null=True)
@@ -98,6 +102,20 @@ class ContentFileSerializer(serializers.ModelSerializer):
             'file_type', 'is_active', 'created_at', 'rating', 'rating_count',
             'categories', 'topics', 'paths', 'file_size', 'file_size_human'
         ]
+    
+    def get_file_size(self, obj):
+        """Возвращает размер файла в байтах."""
+        if obj.file:
+            try:
+                return obj.file.size
+            except (OSError, ValueError, AttributeError):
+                return None
+        return None
+    
+    def get_file_size_human(self, obj):
+        """Возвращает размер файла в читаемом формате."""
+        file_size = self.get_file_size(obj)
+        return self._format_file_size(file_size)
 
     def _convert_to_objects(self, data_list, model_class, field_name):
         """Преобразует список строк (названий) или объектов в список объектов модели."""
@@ -283,22 +301,8 @@ class ContentFileSerializer(serializers.ModelSerializer):
             for path in instance.paths.all()
         ]
         
-        # Добавляем размер файла в байтах
-        # Получаем размер файла напрямую из объекта модели
-        if instance.file:
-            try:
-                # instance.file - это FileField объект, у которого есть атрибут size
-                file_size = instance.file.size
-                representation['file_size'] = file_size
-                representation['file_size_human'] = self._format_file_size(file_size)
-            except (OSError, ValueError, AttributeError):
-                # Если файл не найден или ошибка доступа
-                representation['file_size'] = None
-                representation['file_size_human'] = None
-        else:
-            representation['file_size'] = None
-            representation['file_size_human'] = None
-        
+        # Поля file_size и file_size_human уже добавлены через SerializerMethodField
+        # в super().to_representation(), поэтому ничего дополнительного делать не нужно
         return representation
     
     def _format_file_size(self, size_bytes):
