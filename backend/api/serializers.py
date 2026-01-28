@@ -88,6 +88,17 @@ class ContentFileSerializer(serializers.ModelSerializer):
     rating = serializers.FloatField(read_only=True)
     rating_count = serializers.IntegerField(read_only=True)
 
+    file = serializers.FileField(required=False, allow_null=True)
+    external_url = serializers.URLField(required=False, allow_null=True)
+
+    class Meta:
+        model = ContentFile
+        fields = [
+            'id', 'name', 'file', 'external_url', 'description', 
+            'file_type', 'is_active', 'created_at', 'rating', 'rating_count',
+            'categories', 'topics', 'paths'
+        ]
+
     def _convert_to_objects(self, data_list, model_class, field_name):
         """Преобразует список строк (названий) или объектов в список объектов модели."""
         import json
@@ -162,16 +173,6 @@ class ContentFileSerializer(serializers.ModelSerializer):
                 {field_name: f'{model_class.__name__} "{search_value}" не найден'}
             )
     
-    file = serializers.FileField(required=False, allow_null=True)
-    external_url = serializers.URLField(required=False, allow_null=True)
-
-    class Meta:
-        model = ContentFile
-        fields = [
-            'id', 'name', 'file', 'external_url', 'description', 
-            'file_type', 'is_active', 'created_at', 'rating', 'rating_count',
-            'categories', 'topics', 'paths'
-        ]
 
     def validate(self, data):
         file_type = data.get('file_type')
@@ -244,10 +245,64 @@ class ContentFileSerializer(serializers.ModelSerializer):
     
     def to_representation(self, instance):
         representation = super().to_representation(instance)
-        representation['categories'] = [cat.name for cat in instance.categories.all()]
-        representation['topics'] = [topic.name for topic in instance.topics.all()]
-        representation['paths'] = [path.name for path in instance.paths.all()]
+        
+        # Возвращаем полные объекты категорий
+        representation['categories'] = [
+            {
+                'id': cat.id,
+                'name': cat.name,
+                'slug': cat.slug,
+                'is_active': cat.is_active,
+                'created_at': cat.created_at.isoformat() if cat.created_at else None,
+                'path': cat.path_id if hasattr(cat, 'path_id') else None
+            }
+            for cat in instance.categories.all()
+        ]
+        
+        # Возвращаем полные объекты топиков
+        representation['topics'] = [
+            {
+                'id': topic.id,
+                'name': topic.name,
+                'slug': topic.slug,
+                'is_active': topic.is_active,
+                'created_at': topic.created_at.isoformat() if topic.created_at else None
+            }
+            for topic in instance.topics.all()
+        ]
+        
+        # Возвращаем полные объекты путей
+        representation['paths'] = [
+            {
+                'id': path.id,
+                'name': path.name,
+                'slug': path.slug,
+                'is_active': path.is_active,
+                'created_at': path.created_at.isoformat() if path.created_at else None
+            }
+            for path in instance.paths.all()
+        ]
+        
+        # Добавляем размер файла в байтах
+        if instance.file:
+            representation['file_size'] = instance.file.size
+            representation['file_size_human'] = self._format_file_size(instance.file.size)
+        else:
+            representation['file_size'] = None
+            representation['file_size_human'] = None
+        
         return representation
+    
+    def _format_file_size(self, size_bytes):
+        """Форматирует размер файла в читаемый вид (KB, MB, GB)."""
+        if size_bytes is None:
+            return None
+        
+        for unit in ['B', 'KB', 'MB', 'GB']:
+            if size_bytes < 1024.0:
+                return f"{size_bytes:.2f} {unit}"
+            size_bytes /= 1024.0
+        return f"{size_bytes:.2f} TB"
 
 
 class BotMessageSerializer(serializers.ModelSerializer):
